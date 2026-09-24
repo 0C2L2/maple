@@ -1,0 +1,13 @@
+{
+  "expo": {
+    "name": "Maple",
+    "slug": "maple",
+    "version": "1.0.0",
+    "scheme": "maple",
+    "userInterfaceStyle": "automatic",
+    "ios": { "supportsTablet": false },
+    "web": { "output": "static", "bundler": "metro" },
+    "plugins": ["expo-router"],
+    "experiments": { "typedRoutes": true }
+  }
+}

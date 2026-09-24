@@ -1,0 +1,12 @@
+# Local dependencies and generated output
+node_modules/
+.expo/
+dist/
+web-build/
+coverage/
+
+# Local environment files; keep explicit example contracts trackable
+.env
+.env.*
+!.env.example
+.DS_Store

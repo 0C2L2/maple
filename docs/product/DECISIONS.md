@@ -31,6 +31,7 @@
 | D-016 | Cloudflare for DNS, web hosting, and email forwarding | Accepted | 2026-09-24 |
 | D-017 | Payments: Stripe on the web first, in-app purchases via RevenueCat before store launch | Accepted | 2026-09-24 |
 | D-018 | Repo layout: `docs/`, `client/`, `supabase/` | Accepted | 2026-09-24 |
+| D-019 | Foundation-only client work before the validation gate | Accepted | 2026-09-24 |
 
 ---
 
@@ -168,6 +169,14 @@
 
 ---
 
+## D-019: Foundation-only client work before the validation gate
+- **Status:** Accepted · 2026-09-24
+- **Context:** Build Checkpoint 1 explicitly authorizes a limited foundation exception to D-013 while Phase 0 validation continues.
+- **Decision:** Permit only low-risk, reversible technical foundation work before the validation gate: the shared Expo client foundation, design primitives, static build verification, and similar reversible infrastructure. No marketplace or product functionality may be built under this exception.
+- **Consequences:** Phase 0 continues. The Go/Iterate/Stop validation gate still controls whether the full MVP proceeds. D-013 remains unchanged; this is a narrow exception, not approval of the full product build. Each later checkpoint requires its own explicit scope.
+- **Revisit when:** The Phase 0 validation outcome is recorded or a proposed checkpoint exceeds this foundation-only boundary.
+
+---
 ## Open decisions (to make before or during Phase 0)
 
 | Question | Notes | Needed by |
