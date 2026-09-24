@@ -1,3 +1,4 @@
+import {QuickPitch} from '@/features/pitches/QuickPitch';
 import {useCallback,useState} from 'react';
 import {Link,router,useFocusEffect,useLocalSearchParams} from 'expo-router';
 import Head from 'expo-router/head';
@@ -43,5 +44,6 @@ function Content({mode}:{mode:'new'|'view'|'edit'}){
  <Text className={textStyle}>{opportunity.status==='draft'?'Draft':event.status==='draft'?'Published opportunity - private until the Event is published.':'Published'}</Text>
  <Text className={textStyle}>{opportunity.description}</Text>
  {[...opportunity.opportunity_tiers].sort((a,b)=>a.sort_order-b.sort_order||a.id.localeCompare(b.id)).map(t=><View key={t.id} className="gap-sm rounded-card border border-light-border p-md dark:border-dark-border"><Text accessibilityRole="header" className={textStyle}>{t.name}</Text><Text className={textStyle}>{t.in_kind?'In-kind':formatMoney(t.price_minor!,t.currency!)}</Text>{t.benefits.map((b,i)=><Text key={i} className={textStyle}>• {b}</Text>)}{t.slots?<Text className={textStyle}>{t.slots} sponsorship slots</Text>:null}</View>)}
+ <QuickPitch opportunityId={opportunity.id} ownerOrgId={opportunity.owner_org_id} type="package" published={opportunity.status==='published'&&event.status==='published'}/>
  {canManage?<><Link href={{pathname:'/events/[slug]/opportunities/[opportunitySlug]/edit',params:{slug:event.slug,opportunitySlug:opportunity.slug}}} asChild><Button label="Edit opportunity"/></Link><Button label={busy?'Saving...':opportunity.status==='draft'?'Publish opportunity':'Unpublish opportunity'} disabled={busy} onPress={()=>void publish()}/></>:null}<AuthError message={failure}/></AuthFrame>;
 }

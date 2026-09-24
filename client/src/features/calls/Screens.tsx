@@ -1,3 +1,4 @@
+import {QuickPitch} from '@/features/pitches/QuickPitch';
 import {useCallback,useState} from 'react';
 import {Link,router,useFocusEffect,useLocalSearchParams} from 'expo-router';
 import Head from 'expo-router/head';
@@ -43,6 +44,7 @@ function Content({mode}:{mode:'new'|'view'|'edit'}){
  <Text className={textStyle}>{item.status==='draft'?'Draft - visible only to Sponsor admins of this organization.':'Published'}</Text>
  <Text className={textStyle}>{item.description}</Text>
  {item.opportunity_call_details?( ['target_categories','target_regions','target_audience_types','target_attendance_bands','gives'] as const).map(key=><Text key={key} className={textStyle}>{key.replaceAll('_',' ')}: {item.opportunity_call_details![key].map(preferenceLabel).join(', ')||'Not specified'}</Text>):null}
+ <QuickPitch opportunityId={item.id} ownerOrgId={item.owner_org_id} type="call" published={item.status==='published'}/>
  {canManage?<><Link href={{pathname:'/org/[slug]/calls/[opportunitySlug]/edit',params:{slug:org.slug,opportunitySlug:item.slug}}} asChild><Button label="Edit Call"/></Link><Button label={busy?'Saving...':item.status==='draft'?'Publish Call':'Unpublish Call'} disabled={busy} onPress={()=>void changeStatus()}/></>:null}
  <AuthError message={failure}/></AuthFrame>;
 }

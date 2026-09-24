@@ -372,6 +372,45 @@ export type Database = {
           },
         ]
       }
+      pitches: {
+        Row: {
+          created_at: string
+          from_id: string
+          id: string
+          note: string | null
+          opportunity_id: string
+        }
+        Insert: {
+          created_at?: string
+          from_id?: string
+          id?: string
+          note?: string | null
+          opportunity_id: string
+        }
+        Update: {
+          created_at?: string
+          from_id?: string
+          id?: string
+          note?: string | null
+          opportunity_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pitches_from_id_fkey"
+            columns: ["from_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pitches_opportunity_id_fkey"
+            columns: ["opportunity_id"]
+            isOneToOne: false
+            referencedRelation: "opportunities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           audience_band: string | null
