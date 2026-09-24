@@ -43,7 +43,7 @@ Users pick one primary role at signup. Dual-role accounts come later (see §15).
 ## 4. Features in the MVP
 
 ### 4.1 Auth and onboarding
-- Sign up with an email code (6 digits), Google, Apple, or **Sign in with LinkedIn**. LinkedIn imports name, photo, and headline to cut onboarding time. Apple sign-in is required on iOS when other social logins are offered.
+- Sign up with email and password (the email confirmed by a 6-digit code); sign in the same way, with "Forgot password?" (D-030). Later: Google with Apple (Apple is required on iOS when Google is offered in the app), and **Sign in with LinkedIn**, which imports name, photo, and headline to cut onboarding time.
 - Pick a role: **"I organize events"** or **"I sponsor events"**
 - Guided profile setup in 3 steps, under 3 minutes. The progress bar shows profile strength.
 - Optional: create or join an Organization (auto-suggested by email domain)
@@ -152,7 +152,7 @@ Opportunities come in two types. Both sides can post.
 
 ### 4.14 Product analytics
 Track these events (PostHog):
-`signup_completed` · `role_selected` · `profile_completed` · `post_created` (with `kind`: `event` | `sponsor`) · `search_performed` · `search_result_clicked` · `proposal_sent` · `proposal_status_changed` · `message_sent` · `matched_conversation` (both sides replied) · `deal_completed` · `review_left` · `checkout_started` · `subscription_started` · `boost_purchased` · `boost_impression` · `boost_click`
+`signup_completed` · `role_selected` · `profile_completed` · `post_created` (with `kind`: `event` | `sponsor`) · `search_performed` · `search_result_clicked` · `proposal_sent` · `proposal_status_changed` · `message_sent` · `matched_conversation` (both sides replied) · `deal_won` · `deal_completed` · `review_left` · `checkout_started` · `subscription_started` · `boost_purchased` · `boost_impression` · `boost_click`
 
 ## 5. Out of scope for the MVP
 

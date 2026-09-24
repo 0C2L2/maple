@@ -4,6 +4,7 @@ import { StyleSheet, View } from 'react-native';
 
 import { Spacing } from '@/constants/theme';
 import { OrgLogo } from '@/features/organizations/components/org-logo';
+import { ReportLink } from '@/features/safety/components/report-link';
 import { timeAgo } from '@/lib/format';
 import { supabase } from '@/lib/supabase';
 import { Card } from '@/ui/card';
@@ -38,14 +39,6 @@ export function useReviews(orgId: string | undefined) {
   });
 }
 
-/** Average rating + count, for the organization header. */
-export function useRatingSummary(orgId: string | undefined) {
-  const { data: reviews } = useReviews(orgId);
-  if (!reviews?.length) return null;
-  const avg = reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length;
-  return { avg: Math.round(avg * 10) / 10, count: reviews.length };
-}
-
 // One post-event review: stars, body, who left it, and on which post.
 export function ReviewCard({ review }: { review: Review }) {
   return (
@@ -70,6 +63,7 @@ export function ReviewCard({ review }: { review: Review }) {
           </ThemedText>
         </Link>
       )}
+      <ReportLink type="review" id={review.id} />
     </Card>
   );
 }

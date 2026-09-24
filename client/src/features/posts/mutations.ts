@@ -1,8 +1,32 @@
-import type { AttendanceBand, AudienceType, BudgetBand, Category, Give, PostKind, ProposalStatus } from '@/constants/taxonomy';
+import type {
+  AttendanceBand,
+  AudienceType,
+  BudgetBand,
+  Category,
+  Deliverable,
+  FileKind,
+  Give,
+  PostKind,
+  ProposalStatus,
+} from '@/constants/taxonomy';
 import { track } from '@/lib/analytics';
 import { errorMessage, supabase } from '@/lib/supabase';
 
-export type TierInput = { name: string; price_cents: number | null; benefits: string; slots: number | null };
+/** `id` is set for a tier that already exists, so edits update it in place. */
+export type TierInput = {
+  id?: string;
+  name: string;
+  price_cents: number | null;
+  benefits: string;
+  slots: number | null;
+  deliverables: Deliverable[];
+};
+
+/** A label/value row: audience ("Developers", "60%"), reach, past numbers, schedule, people, use of funds. */
+export type Pair = { label: string; value: string };
+
+/** A PDF already uploaded to post-files/<organization id>/…; `id` is set once it is attached to the post. */
+export type PostFileInput = { id?: string; kind: FileKind; name: string; path: string; size: number };
 
 export type PostInput = {
   kind: PostKind;
@@ -18,15 +42,37 @@ export type PostInput = {
   starts_on: string | null;
   ends_on: string | null;
   city: string | null;
+  venue: string | null;
+  cover_url: string | null;
   online: boolean;
   deadline: string | null;
-  status: 'draft' | 'open';
+  status: 'draft' | 'open' | 'closed';
+  // The pitch to sponsors (event posts); money in the smallest unit of `currency`.
+  currency: string;
+  goal_cents: number | null;
+  needs: string[];
+  deliverables: Deliverable[];
+  exclusivity: string | null;
+  custom_packages: boolean;
+  audience: Pair[];
+  reach: Pair[];
+  past_stats: Pair[];
+  agenda: Pair[];
+  people: Pair[];
+  use_of_funds: Pair[];
+  past_sponsors: string[];
+  languages: string[];
+  registrations: number | null;
+  decision_by: string | null;
+  report_by: string | null;
+  payment_terms: string | null;
   tiers: TierInput[];
+  files: PostFileInput[];
 };
 
 /** Creates a post with its tiers. Returns the post id. */
 export async function createPost(input: PostInput): Promise<string> {
-  const { tiers, ...post } = input;
+  const { tiers, files, ...post } = input;
   const { data, error } = await supabase.from('posts').insert(post).select('id').single();
   if (error) throw new Error(errorMessage(error));
   // ponytail: two inserts, not one transaction; an RPC can wrap them if partial saves show up.
@@ -36,22 +82,51 @@ export async function createPost(input: PostInput): Promise<string> {
       .insert(tiers.map((tier, position) => ({ ...tier, post_id: data.id, position })));
     if (tierError) throw new Error(`Saved, but the tiers failed: ${errorMessage(tierError)}`);
   }
+  await saveFiles(data.id, files);
   track('post_created', { kind: input.kind, status: input.status, tiers: tiers.length });
   return data.id as string;
 }
 
-/** Updates a post's fields and replaces its tiers. */
+/**
+ * Updates a post and its tiers. Existing tiers are updated in place (same id), so proposals that picked a
+ * tier keep it; only tiers the owner removed are deleted.
+ */
 export async function updatePostWithTiers(id: string, input: PostInput): Promise<void> {
-  const { tiers, kind: _kind, ...patch } = input;
-  const { error } = await supabase.from('posts').update(patch).eq('id', id);
-  if (error) throw new Error(errorMessage(error));
-  const { error: deleteError } = await supabase.from('post_tiers').delete().eq('post_id', id);
+  const { tiers, files, kind: _kind, ...patch } = input;
+  // RLS turns someone else's post into "0 rows", not an error, so ask for the row back to notice.
+  const { error } = await supabase.from('posts').update(patch).eq('id', id).select('id').single();
+  if (error) throw new Error(error.code === 'PGRST116' ? 'You can only edit your own posts.' : errorMessage(error));
+
+  const kept = tiers.flatMap((tier) => (tier.id ? [tier.id] : []));
+  let removed = supabase.from('post_tiers').delete().eq('post_id', id);
+  if (kept.length) removed = removed.not('id', 'in', `(${kept.join(',')})`);
+  const { error: deleteError } = await removed;
   if (deleteError) throw new Error(errorMessage(deleteError));
   if (tiers.length) {
+    // New tiers have no id; defaultToNull: false lets the database fill it in.
     const { error: tierError } = await supabase
       .from('post_tiers')
-      .insert(tiers.map((tier, position) => ({ ...tier, post_id: id, position })));
+      .upsert(
+        tiers.map((tier, position) => ({ ...tier, post_id: id, position })),
+        { defaultToNull: false },
+      );
     if (tierError) throw new Error(`Saved, but the tiers failed: ${errorMessage(tierError)}`);
+  }
+  await saveFiles(id, files);
+}
+
+// Keeps the post's documents in step with the form: removed ones are detached, new ones attached.
+// ponytail: detached PDFs stay in storage; add a cleanup job if the bucket grows.
+async function saveFiles(postId: string, files: PostFileInput[]) {
+  const kept = files.flatMap((file) => (file.id ? [file.id] : []));
+  let removed = supabase.from('post_files').delete().eq('post_id', postId);
+  if (kept.length) removed = removed.not('id', 'in', `(${kept.join(',')})`);
+  const { error } = await removed;
+  if (error) throw new Error(errorMessage(error));
+  const added = files.filter((file) => !file.id).map((file) => ({ ...file, post_id: postId }));
+  if (added.length) {
+    const { error: fileError } = await supabase.from('post_files').insert(added);
+    if (fileError) throw new Error(`Saved, but the documents failed: ${errorMessage(fileError)}`);
   }
 }
 
@@ -84,6 +159,7 @@ export async function moveProposalStatus(id: string, status: ProposalStatus): Pr
   const { error } = await supabase.from('proposals').update({ status }).eq('id', id);
   if (error) throw new Error(errorMessage(error));
   track('proposal_status_changed', { status });
+  if (status === 'won') track('deal_won', { proposal_id: id });
 }
 
 /** Either side of a won deal marks it completed after the event. Reviews open then. */

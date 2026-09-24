@@ -1,7 +1,8 @@
 import { Pressable, StyleSheet, Text } from 'react-native';
 
-import { Spacing } from '@/constants/theme';
+import { Fonts, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { motion } from '@/ui/motion';
 
 type Props = {
   title: string;
@@ -10,11 +11,13 @@ type Props = {
   disabled?: boolean;
 };
 
+// On the web the button also darkens (primary) or tints (secondary) on hover and gives a little on press.
 export function Button({ title, onPress, variant = 'primary', disabled }: Props) {
   const theme = useTheme();
   const primary = variant === 'primary';
   return (
     <Pressable
+      {...motion(disabled ? {} : { press: variant })}
       role="button"
       aria-disabled={disabled}
       disabled={disabled}
@@ -37,6 +40,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   label: {
+    fontFamily: Fonts.sans,
     fontSize: 16,
     lineHeight: 20,
     fontWeight: 600,

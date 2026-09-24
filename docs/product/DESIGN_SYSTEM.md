@@ -22,17 +22,18 @@
 
 ## 2. Colors
 
-Every color is a token with a light and a dark value. The app follows the device's light/dark setting.
+Every color is a token with a light and a dark value. The apps follow the device's light/dark setting; the website follows it too unless the visitor picks Light or Dark in the mode menu (the monitor/sun/moon button in the header and in Settings: System, Light, Dark).
 
 | Token | Light | Dark | Use |
 |---|---|---|---|
 | `text` | `#1C1917` | `#FAFAF9` | Main text |
 | `textSecondary` | `#57534E` | `#A8A29E` | Supporting text, labels, timestamps |
-| `background` | `#FFFFFF` | `#121212` | Screen background |
+| `background` | `#FDFCFA` | `#121212` | Screen background (a warm off-white, never pure white) |
 | `backgroundElement` | `#F7F3EF` | `#1E1C1B` | Cards, tinted sections, inputs on tinted areas |
 | `backgroundSelected` | `#EFE6DD` | `#2A2725` | Selected chips and rows, hover |
 | `border` | `#E7E0D9` | `#2F2B28` | Dividers, card and input borders |
 | `brand` | `#C8331B` | `#C8331B` | Primary buttons, active tab, brand accents |
+| `brandSoft` | `#FBEDE8` | `#2A1B17` | Icon tiles, the closing call-to-action band, soft highlights |
 | `onBrand` | `#FFFFFF` | `#FFFFFF` | Text and icons on `brand` |
 | `link` | `#C8331B` | `#FF8A5C` | Links and brand-colored text |
 | `danger` | `#B42318` | `#F97066` | Errors, destructive actions |
@@ -52,15 +53,16 @@ Every color is a token with a light and a dark value. The app follows the device
 
 ## 3. Typography
 
-System fonts: San Francisco on iOS, Roboto on Android, and the system UI font on the web. There are no custom fonts, which keeps apps fast and small.
+**Web:** Geist (SIL Open Font License), self-hosted as one variable file (`client/public/fonts/geist-latin-wght.woff2`, preloaded in `+html.tsx`). **Apps:** the system font (San Francisco on iOS, Roboto on Android), which keeps them fast and small. `ThemedText` and `Button` set the font; raw `<Text>` must use `Fonts.sans`.
 
-| Style | Size / line height | Weight | Use |
-|---|---|---|---|
-| `display` | 38 / 44 | 700 | Landing hero headline only |
-| `title` | 30 / 38 | 700 | Page title and landing section titles. One per screen. |
-| `heading` | 20 / 28 | 700 | Section headings inside a page |
-| `subheading` | 18 / 26 | 700 | Card titles, list group titles |
-| `lead` | 19 / 29 | 400 | Intro paragraph under a title |
+| Style | Size / line height | Weight | Tracking | Use |
+|---|---|---|---|---|
+| hero (home only) | 50 / 54 wide, 40 / 44 phones | 700 | -1.8 / -1.4 | The home headline; second sentence in `link` |
+| `display` | 44 / 50 | 700 | -1.2 | Website page titles (header band) |
+| `title` | 32 / 40 | 700 | -0.7 | App page titles and landing section titles |
+| `heading` | 20 / 28 | 600 | -0.2 | Section headings inside a page |
+| `subheading` | 18 / 26 | 600 | -0.1 | Card titles, list group titles |
+| `lead` | 19 / 30 | 400 | 0 | Intro paragraph under a title |
 | `body` | 16 / 24 | 400 **(change: the draft uses 500)** | Default text |
 | `bodyStrong` | 16 / 24 | 600 | Emphasis inside body text, names in lists |
 | `small` | 14 / 20 | 400 | Secondary info, helper text |
@@ -84,11 +86,12 @@ System fonts: San Francisco on iOS, Roboto on Android, and the system UI font on
 | Thing | Value |
 |---|---|
 | Screen side padding | 16 on phones, 24 from 768 px up |
-| Space between landing sections | 64 top and bottom |
+| Space between landing sections | 80 top and bottom |
 | Gap between cards | 24 (16 on phones) |
 | Radius: checkbox, small badges | 6 |
 | Radius: inputs | 10 |
 | Radius: cards, modals | 16 |
+| Radius: photos, event-type tiles, call-to-action band | 20–28 (bigger for bigger surfaces) |
 | Radius: buttons, chips, avatars | 999 (fully round) |
 | Border | 1 px `border` (1.5 px on the checkbox) |
 | **Minimum touch target** | **44 × 44 px** |
@@ -189,6 +192,24 @@ Every screen that loads data shows one of these:
 - Don't recolor, stretch, or rotate the leaf. Minimum size is 24 px. Keep clear space of half the logo's height around it.
 - The link-preview image is `client/public/og.png` (1200 × 630).
 - User photos are resized to at most 1600 px before upload.
+- Website photos are in `client/assets/images/site/` (webp, at most about 200 KB each). They are free Unsplash photos saved in the repo, credited in `CREDITS.md` there. Every photo has alt text; the blurred background on the closing band is decorative (`alt=""`).
+- Text on a photo sits on a dark scrim (`rgba(24, 12, 8, 0.42)`) so white text stays readable.
+
+## 11a. Motion (website)
+
+Motion lives in `client/src/global.css`; components opt in with `motion({ ... })` from `src/ui/motion.ts`, which sets `data-*` attributes on the web and does nothing in the apps. Only `transform`, `opacity`, and `filter` animate, with the curve `cubic-bezier(0.16, 1, 0.3, 1)`.
+
+| Attribute | What moves | Why |
+|---|---|---|
+| `press` | Buttons darken or tint on hover (180 ms) and shrink to 98% while pressed | Feedback |
+| `lift` | Linked cards and tiles rise 3 px with a warm shadow on hover | Shows they're clickable |
+| `enter="0".."4"` | The home hero and page headers fade and rise in on load, 70 ms apart | Reading order |
+| `reveal` | Sections and text blocks rise in as they scroll into view (CSS scroll timelines; no JavaScript) | Pacing |
+| `open` | FAQ answers and step text fade in when opened | State change |
+| `fill` | The active How-it-works step's bar fills over the 5 s before the next step | Shows the timer |
+| `snap`, `edges` | Carousels snap card by card and fade at an edge that has more cards | Shows there's more |
+
+Rules: nothing loops except the How-it-works steps, and they stop once someone picks a step. Every rule above is off under "reduce motion" (the steps don't advance either). No scroll listeners for animation.
 
 ## 12. Changing the design system
 

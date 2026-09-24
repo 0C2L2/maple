@@ -1,3 +1,4 @@
+import { Link } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
@@ -21,9 +22,11 @@ import { Spacing } from '@/constants/theme';
 import { useSession, type Organization } from '@/features/auth/session';
 import { OrgBanner, OrgLogo } from '@/features/organizations/components/org-logo';
 import { pickAndUploadImage } from '@/features/organizations/upload-image';
+import { useTheme } from '@/hooks/use-theme';
 import { track } from '@/lib/analytics';
 import { errorMessage, supabase } from '@/lib/supabase';
 import { Button } from '@/ui/button';
+import { Checkbox } from '@/ui/checkbox';
 import { ChoiceChips } from '@/ui/choice-chips';
 import { MultiChips } from '@/ui/multi-chips';
 import { TextField } from '@/ui/text-field';
@@ -43,10 +46,11 @@ type Props = {
   onSaved: () => void;
 };
 
-type Field = 'role' | 'kind' | 'name' | 'handle' | 'image' | 'form';
+type Field = 'role' | 'kind' | 'name' | 'handle' | 'image' | 'terms' | 'form';
 
 // Create (onboarding) or edit (settings) an organization page. Role and handle are permanent once created.
 export function OrgForm({ org, initialRole, onSaved }: Props) {
+  const theme = useTheme();
   const { session, refreshOrg } = useSession();
   const [role, setRole] = useState<Role | null>(org?.role ?? initialRole ?? null);
   const [kind, setKind] = useState<OrgKind | null>(org?.kind ?? null);
@@ -65,6 +69,7 @@ export function OrgForm({ org, initialRole, onSaved }: Props) {
   const [attendance, setAttendance] = useState<string | null>(org?.attendance_band ?? null);
   const [budget, setBudget] = useState<string | null>(org?.budget_band ?? null);
   const [gives, setGives] = useState<Give[]>(org?.gives ?? []);
+  const [agreed, setAgreed] = useState(!!org);
   const [errors, setErrors] = useState<Partial<Record<Field, string>>>({});
   const [busy, setBusy] = useState(false);
   const [uploading, setUploading] = useState<'logo' | 'banner' | null>(null);
@@ -92,6 +97,8 @@ export function OrgForm({ org, initialRole, onSaved }: Props) {
     if (!kind) next.kind = 'Pick one.';
     if (!name.trim()) next.name = 'Add your organization name.';
     if (!/^[a-z0-9-]{3,40}$/.test(handle)) next.handle = '3–40 characters: lowercase letters, numbers, dashes.';
+    // The database records the time the page was created as terms_accepted_at.
+    if (!agreed) next.terms = 'Agree to the Terms and Community guidelines to create your page.';
     setErrors(next);
     if (Object.keys(next).length) return;
 
@@ -228,6 +235,25 @@ export function OrgForm({ org, initialRole, onSaved }: Props) {
           <ChoiceChips label="Budget per event" options={BUDGET_BANDS} value={budget} onChange={setBudget} />
           <MultiChips label="What you give" options={GIVES} value={gives} onChange={setGives} />
         </>
+      )}
+      {!org && (
+        <Checkbox
+          checked={agreed}
+          onChange={setAgreed}
+          label="I agree to the Terms and Community guidelines"
+          error={errors.terms}>
+          <ThemedText type="small">
+            I agree to Maple’s{' '}
+            <Link href="/legal/terms" style={{ color: theme.link }}>
+              Terms
+            </Link>{' '}
+            and{' '}
+            <Link href="/legal/community" style={{ color: theme.link }}>
+              Community guidelines
+            </Link>
+            , and I can act for this organization.
+          </ThemedText>
+        </Checkbox>
       )}
       {errors.form && (
         <ThemedText role="alert" themeColor="danger">

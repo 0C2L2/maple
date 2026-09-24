@@ -4,12 +4,14 @@ import { SymbolView, type SymbolViewProps } from 'expo-symbols';
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
-import { MaxContentWidth, Spacing } from '@/constants/theme';
+import { Fonts, MaxContentWidth, Spacing } from '@/constants/theme';
 import { useSession } from '@/features/auth/session';
 import { useUnreadCount } from '@/features/notifications/use-unread';
 import { OrgLogo } from '@/features/organizations/components/org-logo';
+import { useIsStaff } from '@/features/safety/use-is-staff';
 import { useTheme } from '@/hooks/use-theme';
 import { supabase } from '@/lib/supabase';
+import { ThemeMenu } from '@/ui/theme-menu';
 
 type Item = { href: Href; path: string; label: string; icon: SymbolViewProps['name'] };
 
@@ -32,6 +34,7 @@ export function TopNav() {
   const pathname = usePathname();
   const { org } = useSession();
   const unread = useUnreadCount();
+  const { isStaff } = useIsStaff();
   const [q, setQ] = useState('');
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -57,7 +60,8 @@ export function TopNav() {
         />
         <View style={styles.spacer} />
         <Link href="/posts/new" asChild>
-          <Pressable accessibilityLabel="Post" style={[styles.postButton, { backgroundColor: theme.brand }]}>
+          {/* A Link child's style must be one flat object: Link's Slot can't merge style arrays. */}
+          <Pressable accessibilityLabel="Post" style={StyleSheet.flatten([styles.postButton, { backgroundColor: theme.brand }])}>
             <Text style={[styles.postButtonText, { color: theme.onBrand }]}>Post</Text>
           </Pressable>
         </Link>
@@ -85,6 +89,7 @@ export function TopNav() {
             </Link>
           );
         })}
+        <ThemeMenu />
         {org && (
           <View>
             <Pressable
@@ -113,6 +118,7 @@ export function TopNav() {
                 <MenuLink href="/my-posts" label="My posts" close={() => setMenuOpen(false)} />
                 <MenuLink href="/proposals" label="Proposals" close={() => setMenuOpen(false)} />
                 <MenuLink href="/settings" label="Settings" close={() => setMenuOpen(false)} />
+                {isStaff && <MenuLink href="/admin" label="Maple admin" close={() => setMenuOpen(false)} />}
                 <Pressable
                   role="menuitem"
                   onPress={async () => {
@@ -121,7 +127,7 @@ export function TopNav() {
                     router.replace('/');
                   }}
                   style={styles.menuItem}>
-                  <Text style={{ color: theme.textSecondary }}>Sign out</Text>
+                  <Text style={[styles.menuText, { color: theme.textSecondary }]}>Sign out</Text>
                 </Pressable>
               </View>
             )}
@@ -137,11 +143,14 @@ function MenuLink({ href, label, close }: { href: Href; label: string; close: ()
   return (
     <Link href={href} asChild onPress={close}>
       <Pressable role="menuitem" style={styles.menuItem}>
-        <Text style={{ color: theme.text }}>{label}</Text>
+        <Text style={[styles.menuText, { color: theme.text }]}>{label}</Text>
       </Pressable>
     </Link>
   );
 }
+
+// Raw <Text> doesn't get ThemedText's font, so each text style names it.
+const font = { fontFamily: Fonts.sans };
 
 const styles = StyleSheet.create({
   bar: { borderBottomWidth: 1, paddingHorizontal: Spacing.three, zIndex: 10 },
@@ -155,7 +164,7 @@ const styles = StyleSheet.create({
   },
   logo: { width: 36, height: 36 },
   postButton: { borderRadius: 999, paddingHorizontal: Spacing.four, paddingVertical: Spacing.two },
-  postButtonText: { fontSize: 14, fontWeight: 700 },
+  postButtonText: { ...font, fontSize: 14, fontWeight: 700 },
   search: { width: 260, height: 36, borderRadius: 6, paddingHorizontal: Spacing.three, fontSize: 14 },
   spacer: { flex: 1 },
   item: {
@@ -167,7 +176,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 2,
     paddingHorizontal: Spacing.one,
   },
-  label: { fontSize: 12, lineHeight: 16 },
+  label: { ...font, fontSize: 12, lineHeight: 16 },
   badge: {
     position: 'absolute',
     top: -4,
@@ -179,7 +188,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  badgeText: { fontSize: 11, fontWeight: 700 },
+  badgeText: { ...font, fontSize: 11, fontWeight: 700 },
   menu: {
     position: 'absolute',
     top: 58,
@@ -195,7 +204,8 @@ const styles = StyleSheet.create({
   },
   menuHead: { flexDirection: 'row', gap: Spacing.two, padding: Spacing.three, alignItems: 'center' },
   menuHeadText: { flex: 1 },
-  menuName: { fontSize: 16, fontWeight: 700 },
-  menuSub: { fontSize: 13 },
+  menuName: { ...font, fontSize: 16, fontWeight: 700 },
+  menuSub: { ...font, fontSize: 13 },
+  menuText: font,
   menuItem: { paddingHorizontal: Spacing.three, paddingVertical: 10 },
 });

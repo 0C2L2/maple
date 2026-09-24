@@ -4,8 +4,8 @@
 
 | | |
 |---|---|
-| Last updated | 2026-09-24 |
-| Method | Desk research (public reports, competitor sites, pricing pages). Primary interviews are planned in Phase 0. |
+| Last updated | 2026-09-25 |
+| Method | Desk research plus a participant-reported observation from HABSIDA's opening remarks. Formal primary interview results are not documented here. |
 | Companion docs | [PLAN.md](../business/PLAN.md) · [MARKET.md](../business/MARKET.md) · [MVP.md](../product/MVP.md) |
 
 > **Note on figures:** third-party numbers below come from public reports and articles (see [Sources](#10-sources)). Research firms often disagree, so ranges are shown where they differ. Re-check any figure before it goes into an investor deck.
@@ -20,7 +20,36 @@
 4. Will either side pay for visibility, tools, or priority?
 5. What data do sponsors need before they commit money?
 
-## 2. Key findings from desk research
+## 2. Problem evidence and desk research
+
+### 2.0 HABSIDA origin observation — recorded September 25, 2026
+
+**Source:** the Maple participant's account of remarks made when HABSIDA Hackathon was introduced. This is a recollection and paraphrase, not a verbatim transcript, recorded interview, or independently verified account.
+
+The participant reports that the organizer:
+
+- Joked about difficulty finding sponsors and said the organizers contributed their own resources to support the hackathon.
+- Mentioned support from Florian Ludot, a judge and active event participant. The precise contribution and his motivation have not been independently established.
+- Said they wanted to hold two hackathons every year.
+
+The participant identifies this experience as the origin of Maple's idea. It provides a specific example of a sponsorship problem encountered in the team's own community.
+
+**Public-source context:** the [official event page](https://luma.com/cwaixvls), checked September 25, lists UpperClass as a sponsor. “Finding sponsors was difficult” is therefore the appropriate pitch paraphrase; “the event had no sponsors” would overlook published support. Neither the page nor the participant's account establishes a Maple customer agreement, endorsement, or future pilot commitment.
+
+**What this suggests testing:** recurring community events may face repeated work finding relevant support. Personal relationships appear worth investigating as an existing route to sponsorship. However, the remarks do not establish whether the main constraint was discovery, available budget, timing, audience fit, the offer, or reaching a decision-maker. They do not show that Maple would have changed this event's outcome.
+
+**Next research questions:**
+
+1. What did the organizers actually do to seek support, over what period, and where did the process stop?
+2. What support was needed, which contributions arrived, and what remained unmet? Distinguish cash and in-kind contributions.
+3. Which potential sponsors declined or did not respond, and what reasons are known rather than assumed?
+4. What would a sponsor need to know about the audience, benefits, timing, and reporting before discussing an offer?
+5. For two events a year, which work repeats, and would an organizer prefer paying per event, periodically, or only after receiving value? Pricing remains unvalidated.
+6. Would the organizers be willing to explore a future pilot, and what would they consider a useful result? No agreement is recorded here.
+
+**Pitch application:** use this as the origin story, then demonstrate an explicitly illustrative next-event workflow and propose a follow-up conversation. A show of hands about wanting another hackathon is audience participation, not validation of demand for Maple. The participant-supplied Demo Day image specifies four minutes of pitch and four minutes of Q&A. See the [updated playbook](../business/PITCH_PLAYBOOK.md) and [rehearsal script](../business/PITCH_SCRIPT_4MIN.md).
+
+**Status of older material below:** the remaining desk-research sections preserve earlier research and hypotheses; they are not all revalidated by this update. In particular, the older social-network framing is superseded by product decision D-026, and the 24.6% statistic below was not located in the currently linked source during the pitch review. Do not use it on stage without the original dated evidence. The pitch playbook records current competitor and product caveats.
 
 ### 2.1 Getting sponsors is organizers' top marketing challenge
 - Securing sponsorship was the **#1 event marketing challenge for 24.6% of live event organizers** in 2024 (Eventeny, 2025 sponsorship trends).

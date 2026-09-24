@@ -11,12 +11,14 @@ import { Platform } from 'react-native';
 export const Colors = {
   light: {
     text: '#1C1917',
-    background: '#FFFFFF',
+    background: '#FDFCFA',
     backgroundElement: '#F7F3EF',
     backgroundSelected: '#EFE6DD',
     textSecondary: '#57534E',
     border: '#E7E0D9',
     brand: '#C8331B',
+    /** A soft wash of the brand color for bands, icon tiles, and highlights. */
+    brandSoft: '#FBEDE8',
     onBrand: '#FFFFFF',
     link: '#C8331B',
     danger: '#B42318',
@@ -29,6 +31,7 @@ export const Colors = {
     textSecondary: '#A8A29E',
     border: '#2F2B28',
     brand: '#C8331B',
+    brandSoft: '#2A1B17',
     onBrand: '#FFFFFF',
     link: '#FF8A5C',
     danger: '#F97066',

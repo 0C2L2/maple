@@ -9,9 +9,30 @@ export const formatDate = (value: string) => dateFormat.format(new Date(value));
 export const isIsoDate = (value: string) =>
   /^\d{4}-\d{2}-\d{2}$/.test(value) && new Date(value).toISOString().startsWith(value);
 
-/** 500000 → "$5,000", 150050 → "$1,500.50". */
-export const formatMoney = (cents: number) =>
-  `$${(cents / 100).toLocaleString('en-US', { minimumFractionDigits: cents % 100 ? 2 : 0, maximumFractionDigits: 2 })}`;
+/** Decimal places of a currency's smallest unit: 2 for USD (cents), 0 for KRW and JPY. */
+export const minorDigits = (currency = 'USD') =>
+  new Intl.NumberFormat('en-US', { style: 'currency', currency }).resolvedOptions().maximumFractionDigits ?? 2;
+
+/**
+ * Money stored in the currency's smallest unit (CLAUDE.md: integer cents; won for KRW).
+ * 500000 → "$5,000", 150050 → "$1,500.50", formatMoney(5000000, 'KRW') → "₩5,000,000".
+ */
+export const formatMoney = (minor: number, currency = 'USD') => {
+  const digits = minorDigits(currency);
+  const amount = minor / 10 ** digits;
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency,
+    minimumFractionDigits: amount % 1 ? digits : 0,
+    maximumFractionDigits: digits,
+  }).format(amount);
+};
+
+/** "2500" typed in a form → smallest units, or null when blank or not a number. */
+export const toMinor = (text: string, currency = 'USD') => {
+  const value = Number(text.replace(/[^\d.]/g, ''));
+  return text.trim() && Number.isFinite(value) ? Math.round(value * 10 ** minorDigits(currency)) : null;
+};
 
 /** "now", "5m", "3h", "2d", then the date. */
 export function timeAgo(value: string) {

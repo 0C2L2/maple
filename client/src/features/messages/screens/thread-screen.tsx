@@ -70,10 +70,12 @@ export function ThreadView({ threadId, standalone }: { threadId: string; standal
     },
   });
 
-  // New messages arrive live through Supabase Realtime.
+  // New messages arrive live through Supabase Realtime. The topic is unique per screen: supabase.channel() hands
+  // back an existing channel with the same topic (this thread can be open twice in the stack), and adding a
+  // callback to an already-subscribed channel throws.
   useEffect(() => {
     const channel = supabase
-      .channel(`thread:${threadId}`)
+      .channel(`thread:${threadId}:${Math.random().toString(36).slice(2)}`)
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'messages', filter: `thread_id=eq.${threadId}` },
@@ -95,6 +97,18 @@ export function ThreadView({ threadId, standalone }: { threadId: string; standal
       .eq('org_id', me)
       .then(() => queryClient.invalidateQueries({ queryKey: THREAD_LIST_KEY }));
   }, [messages, threadId, me, queryClient]);
+
+  // A block (either way) turns messaging off; the database refuses new messages, so say why up front.
+  const otherId = thread?.thread_participants.find((m) => m.org.id !== me)?.org.id;
+  const { data: blocked } = useQuery({
+    queryKey: ['blocks', 'with', otherId],
+    enabled: !!otherId,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('blocked_with', { other: otherId });
+      if (error) throw error;
+      return data as boolean;
+    },
+  });
 
   if (isPending) return <Loading />;
   if (!thread) return <Notice title="Conversation not found" action={{ title: 'All messages', href: '/messages' }} />;
@@ -171,6 +185,13 @@ export function ThreadView({ threadId, standalone }: { threadId: string; standal
           })}
         </View>
       </ScrollView>
+      {blocked ? (
+        <View style={[styles.composer, { borderTopColor: theme.border }]}>
+          <ThemedText themeColor="textSecondary" style={styles.column}>
+            Messaging is off: one of you blocked the other.
+          </ThemedText>
+        </View>
+      ) : (
       <View style={[styles.composer, { borderTopColor: theme.border }]}>
         <View style={[styles.column, styles.composerRow]}>
           <TextInput
@@ -193,6 +214,7 @@ export function ThreadView({ threadId, standalone }: { threadId: string; standal
           </ThemedText>
         )}
       </View>
+      )}
     </KeyboardAvoidingView>
   );
 }

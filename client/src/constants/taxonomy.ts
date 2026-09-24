@@ -20,7 +20,7 @@ export const ORG_KIND_LABELS = {
 export type OrgKind = keyof typeof ORG_KIND_LABELS;
 const kinds = (values: OrgKind[]) => values.map((value) => ({ value, label: ORG_KIND_LABELS[value] }));
 export const ORG_KINDS: Record<Role, { value: OrgKind; label: string }[]> = {
-  organizer: kinds(['event_company', 'community', 'university_club', 'nonprofit']),
+  organizer: kinds(['event_company', 'community', 'university_club', 'nonprofit', 'company']),
   sponsor: kinds(['company', 'agency', 'nonprofit']),
 };
 
@@ -114,7 +114,49 @@ export const REGION_LABELS = {
   berlin: 'Berlin',
   bangalore: 'Bangalore',
   singapore: 'Singapore',
+  seoul: 'Seoul / Incheon',
   sydney: 'Sydney',
 } as const;
 export type Region = keyof typeof REGION_LABELS;
 export const REGIONS = options(REGION_LABELS);
+
+// What an event gives its sponsors. Keys match public.valid_deliverables() in the core migration.
+export const DELIVERABLE_LABELS = {
+  logo_site: 'Logo on the website',
+  logo_merch: 'Logo on t-shirts and merch',
+  logo_stage: 'Logo on stage and screens',
+  booth: 'Booth or table',
+  talk: 'Talk or keynote slot',
+  workshop: 'Workshop slot',
+  judging: 'Seat on the judging panel',
+  track_prize: 'Own track or prize ("Best use of…")',
+  recruiting: 'Recruiting access (CVs, with consent)',
+  social_posts: 'Social media posts',
+  newsletter: 'Newsletter mention',
+  swag: 'Swag in attendee bags',
+  demo: 'Product demo',
+  naming: 'Naming rights',
+} as const;
+export type Deliverable = keyof typeof DELIVERABLE_LABELS;
+export const DELIVERABLES = options(DELIVERABLE_LABELS);
+
+export const CURRENCIES = [
+  { value: 'USD', label: 'USD $' },
+  { value: 'EUR', label: 'EUR €' },
+  { value: 'GBP', label: 'GBP £' },
+  { value: 'KRW', label: 'KRW ₩' },
+  { value: 'JPY', label: 'JPY ¥' },
+  { value: 'INR', label: 'INR ₹' },
+  { value: 'SGD', label: 'SGD' },
+  { value: 'CAD', label: 'CAD' },
+  { value: 'AUD', label: 'AUD' },
+] as const;
+
+export const FILE_KIND_LABELS = {
+  deck: 'Sponsorship deck',
+  plan: 'Event plan',
+  media_kit: 'Media kit',
+  other: 'Document',
+} as const;
+export type FileKind = keyof typeof FILE_KIND_LABELS;
+export const FILE_KINDS = options(FILE_KIND_LABELS);

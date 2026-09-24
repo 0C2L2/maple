@@ -1,8 +1,10 @@
 import { Tabs } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
 
+import { Gate } from '@/features/auth/gate';
+import { useSession } from '@/features/auth/session';
 import { useUnreadCount } from '@/features/notifications/use-unread';
-import { MeButton, SearchButton } from '@/features/shell/header-buttons';
+import { MeButton, PostButton } from '@/features/shell/header-buttons';
 import { useIsWide } from '@/hooks/use-is-wide';
 import { useTheme } from '@/hooks/use-theme';
 
@@ -19,19 +21,26 @@ const TABS = [
   { name: 'notifications', title: 'Notifications', icon: { ios: 'bell', android: 'notifications', web: 'notifications' } },
 ] as const;
 
+// Find is the home tab (and the one signed-out visitors may see).
+export const unstable_settings = { initialRouteName: 'find' };
+
 export default function TabsLayout() {
   const wide = useIsWide();
   const theme = useTheme();
   const unread = useUnreadCount();
+  const { session } = useSession();
+  // Desktop web navigates with the top bar; signed-out visitors (browsing Find) use the website header.
+  const bare = wide || !session;
   return (
     <Tabs
-      // Desktop web navigates with the top bar, so it has no tab bar.
-      tabBar={wide ? () => null : undefined}
+      tabBar={bare ? () => null : undefined}
+      // Each tab waits for the session; only Find is open to signed-out visitors.
+      screenLayout={({ children, route }) => <Gate isPublic={route.name === 'find'}>{children}</Gate>}
       screenOptions={{
-        headerShown: !wide,
+        headerShown: !bare,
         tabBarActiveTintColor: theme.link,
         headerLeft: () => <MeButton />,
-        headerRight: () => <SearchButton />,
+        headerRight: () => <PostButton />,
       }}>
       {TABS.map((tab) => (
         <Tabs.Screen

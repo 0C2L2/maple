@@ -13,7 +13,8 @@ export function useLiveUpdates() {
   useEffect(() => {
     if (!me) return;
     const channel = supabase
-      .channel(`notifications:${me}`)
+      // Unique topic: a quick remount would otherwise get the old, already-subscribed channel back and throw.
+      .channel(`notifications:${me}:${Math.random().toString(36).slice(2)}`)
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'notifications', filter: `recipient_id=eq.${me}` },

@@ -12,6 +12,7 @@ export type AnalyticsEvent =
   | 'proposal_status_changed'
   | 'message_sent'
   | 'matched_conversation'
+  | 'deal_won'
   | 'deal_completed'
   | 'review_left';
 

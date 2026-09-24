@@ -25,6 +25,9 @@ export type Organization = {
   budget_band: BudgetBand | null;
   gives: Give[];
   created_at: string;
+  /** Set by Maple staff; the page is hidden from everyone else. */
+  suspended_at: string | null;
+  suspended_reason: string | null;
 };
 
 type SessionState = {

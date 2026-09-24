@@ -6,11 +6,15 @@ export function validatePost(input: PostInput): Record<string, string> {
   const next: Record<string, string> = {};
   if (!input.title.trim()) next.title = 'Add a title.';
   if (!input.body.trim()) next.body = input.kind === 'event' ? 'Describe the event plan.' : 'Describe what you are looking for.';
+  // One post = one event (D-026): the date is what opens reviews after the event.
+  if (input.kind === 'event' && !input.starts_on) next.starts_on = 'Add the event date.';
   if (input.starts_on && !isIsoDate(input.starts_on)) next.starts_on = 'Use the format YYYY-MM-DD.';
   if (input.ends_on && !isIsoDate(input.ends_on)) next.ends_on = 'Use the format YYYY-MM-DD.';
   if (input.starts_on && input.ends_on && isIsoDate(input.starts_on) && isIsoDate(input.ends_on) && input.ends_on < input.starts_on)
     next.ends_on = 'The end date is before the start date.';
   if (input.deadline && !isIsoDate(input.deadline)) next.deadline = 'Use the format YYYY-MM-DD.';
+  if (input.decision_by && !isIsoDate(input.decision_by)) next.decision_by = 'Use the format YYYY-MM-DD.';
+  if (input.report_by && !isIsoDate(input.report_by)) next.report_by = 'Use the format YYYY-MM-DD.';
   if (!input.online && input.kind === 'event' && !input.city?.trim()) next.city = 'Add a city, or mark it online.';
   input.tiers.forEach((tier, i) => validateTier(tier, i, next));
   return next;

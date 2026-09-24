@@ -7,7 +7,7 @@ import { useSession } from '@/features/auth/session';
 import { OrgLogo } from '@/features/organizations/components/org-logo';
 import { useTheme } from '@/hooks/use-theme';
 
-// Phone header: your logo on the left (opens your page), search on the right.
+// Phone header: your logo on the left (opens your page), a new-post button on the right.
 export function MeButton() {
   const { org } = useSession();
   if (!org) return null;
@@ -20,12 +20,15 @@ export function MeButton() {
   );
 }
 
-export function SearchButton() {
+// Find is already a tab, so the phone header's right button starts a new post (the desktop bar's red Post).
+export function PostButton() {
   const theme = useTheme();
+  const { org } = useSession();
+  if (!org) return null;
   return (
-    <Link href="/find" asChild>
-      <Pressable accessibilityLabel="Search" hitSlop={8} style={styles.button}>
-        <SymbolView name={{ ios: 'magnifyingglass', android: 'search', web: 'search' }} tintColor={theme.text} size={24} />
+    <Link href="/posts/new" asChild>
+      <Pressable accessibilityLabel="New post" hitSlop={8} style={styles.button}>
+        <SymbolView name={{ ios: 'plus.circle', android: 'add_circle', web: 'add_circle' }} tintColor={theme.link} size={28} />
       </Pressable>
     </Link>
   );

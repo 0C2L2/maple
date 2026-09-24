@@ -44,7 +44,7 @@
                           ▼
   Supabase (the backend for all three)
   ├─ Postgres: all data · Row Level Security · search · plan limits
-  ├─ Auth: email code · Google · Apple · LinkedIn
+  ├─ Auth: email + password · Turnstile (Google, Apple, LinkedIn later)
   ├─ Realtime: live chat · Storage: photos, PDFs · Cron: email digests
   └─ Edge Functions ─► Stripe · RevenueCat · Resend · Expo Push
 
@@ -115,7 +115,7 @@ There is no server of our own to run. The apps talk straight to Supabase, and se
 | **Row Level Security** | The security boundary | Every table has policies. Users write only their own rows, and messages, views, and billing are private. Tested with pgTAP (`supabase test db --local`). |
 | **SQL functions (RPC)** | Search (`search_posts` with Boost slots, `search_organizations`), proposals (`send_proposal`, `complete_proposal`, `leave_review`), view recording, plan limits, matched-conversation detection | One implementation of each rule, used by all three platforms. Signatures in [SHARED_CONTRACTS §3](SHARED_CONTRACTS.md#3-database-functions-rpc). |
 | **Full-text search** | Search | A `tsvector` column + GIN index + `pg_trgm` (D-008) |
-| **Auth** | Sign-in | Email **6-digit code** (works on every platform without magic-link deep links), Google, Apple, LinkedIn (OIDC). On iOS, Apple requires a privacy-focused login option like Sign in with Apple when Google or LinkedIn login is offered. |
+| **Auth** | Sign-in | Email + **password** (D-030). Email confirmation and password reset use **6-digit codes** (they work on every platform without deep links). **Cloudflare Turnstile** (Supabase Auth captcha) guards sign-up, sign-in, and reset. Google, Apple, and LinkedIn (OIDC) come later; on iOS, Apple requires Sign in with Apple when Google or LinkedIn is offered in the app. |
 | **Realtime** | Live messages, unread counts | Subscribe to new rows in `messages` for the open thread |
 | **Storage** | Logos, banners, post images, message attachments | Buckets protected by RLS: `org-media`, `post-media` (public), `message-attachments` (thread participants only). See [SHARED_CONTRACTS §5](SHARED_CONTRACTS.md#5-storage-buckets). The app resizes images before upload to stay inside the free 1 GB. |
 | **Edge Functions** | Code that needs secret keys | See the table below |

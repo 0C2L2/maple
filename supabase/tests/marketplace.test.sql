@@ -1,7 +1,7 @@
 -- Maple marketplace (D-026) pgTAP tests: posts, proposals, reviews, RLS, and the core loop.
 -- Run: supabase test db --local
 begin;
-select plan(46);
+select plan(60);
 
 -- ---------------------------------------------------------------- schema: new tables exist
 select has_table('public', 'organizations', 'organizations exists');
@@ -28,8 +28,8 @@ select hasnt_table('public', 'reactions', 'reactions dropped');
 -- RLS is on everywhere (users write only their own rows)
 select is(
   (select count(*)::int from pg_tables where schemaname = 'public' and rowsecurity),
-  13,
-  'RLS enabled on all 13 tables'
+  20,
+  'RLS enabled on all 20 tables'
 );
 
 -- Enum values match SHARED_CONTRACTS §1
@@ -45,10 +45,12 @@ select set_eq(
 );
 
 -- ---------------------------------------------------------------- fixtures: two organizations
-insert into auth.users (id) values ('11111111-1111-1111-1111-111111111111'), ('22222222-2222-2222-2222-222222222222');
-insert into public.organizations (id, role, kind, handle, name) values
-  ('11111111-1111-1111-1111-111111111111', 'organizer', 'event_company', 'hackcity', 'HackCity'),
-  ('22222222-2222-2222-2222-222222222222', 'sponsor', 'company', 'acme-cloud', 'Acme Cloud');
+insert into auth.users (id) values ('11111111-1111-1111-1111-111111111111'), ('22222222-2222-2222-2222-222222222222'),
+  ('33333333-3333-3333-3333-333333333333');
+insert into public.organizations (id, role, kind, handle, name, categories) values
+  ('11111111-1111-1111-1111-111111111111', 'organizer', 'event_company', 'hackcity', 'HackCity', '{hackathon}'),
+  ('22222222-2222-2222-2222-222222222222', 'sponsor', 'company', 'acme-cloud', 'Acme Cloud', '{hackathon}'),
+  ('33333333-3333-3333-3333-333333333333', 'organizer', 'community', 'meetupco', 'MeetupCo', '{meetup}');
 
 -- ---------------------------------------------------------------- organizer posts an event (RLS: own row)
 set role authenticated;
@@ -62,6 +64,21 @@ select is(
   1,
   'organizer created one post through RLS'
 );
+
+-- An organization may post both kinds (D-028), and a post's kind is permanent
+set role authenticated;
+select set_config('request.jwt.claim.sub', '11111111-1111-1111-1111-111111111111', true);
+select lives_ok(
+  $$ insert into public.posts (kind, title, body, status) values ('sponsor', 'We also sponsor', 'x', 'draft') $$,
+  'an organizer can also publish a sponsor post'
+);
+select throws_ok(
+  $$ update public.posts set kind = 'sponsor' where owner_id = '11111111-1111-1111-1111-111111111111' $$,
+  '42501',
+  'permission denied for table posts',
+  'a post''s kind cannot be changed'
+);
+reset role;
 
 -- Non-owner cannot edit it (RLS: zero rows touched)
 set role authenticated;
@@ -126,18 +143,64 @@ select throws_ok(
   'This post is closed',
   'proposing to a draft is rejected'
 );
+-- Nobody proposes to their own post
+select set_config('request.jwt.claim.sub', '11111111-1111-1111-1111-111111111111', true);
+select throws_ok(
+  $$ select public.send_proposal(
+    (select id from public.posts where title = 'Sponsor HackCity 2026'), 'To myself.', null, null) $$,
+  '42501',
+  'You can''t propose to your own post',
+  'the owner cannot propose to its own post'
+);
 reset role;
 
--- Owner moves it to won, then either side completes it
-update public.proposals set status = 'won'
-  where post_id = (select id from public.posts where title = 'Sponsor HackCity 2026');
+-- Proposal counts on cards are public totals, not just the viewer's own rows
+set role anon;
+select is(
+  (select proposal_count from public.search_posts('', '{}', 0) where title = 'Sponsor HackCity 2026'),
+  1,
+  'signed-out visitors see the real proposal count'
+);
+reset role;
+
+-- The owner moves it to won through RLS, but can't complete it directly
+set role authenticated;
+select set_config('request.jwt.claim.sub', '11111111-1111-1111-1111-111111111111', true);
+select throws_ok(
+  $$ update public.proposals set status = 'completed' $$,
+  '42501',
+  'new row violates row-level security policy for table "proposals"',
+  'the owner cannot mark a deal completed directly'
+);
+select lives_ok($$ update public.proposals set status = 'won' $$, 'the owner marks the proposal won');
+
+-- Either side completes it, but only after the event
+select set_config('request.jwt.claim.sub', '22222222-2222-2222-2222-222222222222', true);
+reset role;
+update public.posts set starts_on = current_date + 30 where title = 'Sponsor HackCity 2026';
+set role authenticated;
+select set_config('request.jwt.claim.sub', '22222222-2222-2222-2222-222222222222', true);
+select throws_ok(
+  $$ select public.complete_proposal((select id from public.proposals limit 1)) $$,
+  '22023',
+  null,
+  'a deal cannot be completed before the event'
+);
+reset role;
+update public.posts set starts_on = current_date - 1 where title = 'Sponsor HackCity 2026';
 set role authenticated;
 select set_config('request.jwt.claim.sub', '22222222-2222-2222-2222-222222222222', true);
 select lives_ok(
   $$ select public.complete_proposal((select id from public.proposals limit 1)) $$,
-  'sponsor side can complete a won deal'
+  'sponsor side can complete a won deal after the event'
 );
 reset role;
+select is(
+  (select count(*)::int from public.notifications
+    where recipient_id = '11111111-1111-1111-1111-111111111111' and body like '%is complete%'),
+  1,
+  'completing notifies the other side (the post owner)'
+);
 select is(
   (select status::text from public.proposals limit 1),
   'completed',
@@ -169,8 +232,8 @@ select throws_ok(
 );
 select set_config('request.jwt.claim.sub', '11111111-1111-1111-1111-111111111111', true);
 select lives_ok(
-  $$ select public.leave_review((select id from public.proposals limit 1), 5, 'Paid on time.') $$,
-  'organizer leaves a review'
+  $$ select public.leave_review((select id from public.proposals limit 1), 4, '') $$,
+  'organizer leaves a star-only review (the written part is optional)'
 );
 reset role;
 select is(
@@ -178,10 +241,47 @@ select is(
   2,
   'one review per side'
 );
+select is(
+  (select completed_deals from public.org_stats('11111111-1111-1111-1111-111111111111')),
+  1,
+  'org_stats counts the completed deal for anyone'
+);
+select is(
+  (select rating from public.org_stats('11111111-1111-1111-1111-111111111111')),
+  5.0,
+  'org_stats averages every review'
+);
+
+-- ---------------------------------------------------------------- Find: best matches and filters
+-- Find only lists events that haven't ended, so move this one back into the future.
+update public.posts set starts_on = current_date + 30 where title = 'Sponsor HackCity 2026';
+select cmp_ok(
+  (select score from public.search_posts('', '{"match": "22222222-2222-2222-2222-222222222222"}', 0) limit 1),
+  '>',
+  0::real,
+  'best matches rank a post that shares an event type'
+);
+select is(
+  (select count(*)::int from public.search_posts('', '{"match": "11111111-1111-1111-1111-111111111111"}', 0)),
+  0,
+  'best matches hide your own posts'
+);
+select is(
+  (select count(*)::int from public.search_posts('', '{"categories": ["conference", "hackathon"]}', 0)),
+  1,
+  'several event types match any of them'
+);
+select is(
+  (select count(*)::int from public.search_posts('', '{"categories": ["conference"]}', 0)),
+  0,
+  'an unmatched event type filters the post out'
+);
 
 -- ---------------------------------------------------------------- views, saves, notifications
+-- Really signed out: clear the user left over from the steps above (the claim lasts for the transaction).
+select set_config('request.jwt.claim.sub', '', true);
 select lives_ok(
-  $$ select public.record_post_view((select id from public.posts limit 1)) $$,
+  $$ select public.record_post_view((select id from public.posts where title = 'Sponsor HackCity 2026')) $$,
   'record_post_view is a no-op for anonymous visitors'
 );
 select is((select count(*)::int from public.post_views), 0, 'no anonymous view rows');

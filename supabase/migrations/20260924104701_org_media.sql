@@ -8,3 +8,15 @@ create policy "organizations upload own media" on storage.objects for insert to 
   with check (bucket_id = 'org-media' and (storage.foldername(name))[1] = (select auth.uid())::text);
 create policy "organizations delete own media" on storage.objects for delete to authenticated
   using (bucket_id = 'org-media' and (storage.foldername(name))[1] = (select auth.uid())::text);
+
+-- Post documents (sponsorship deck, event plan, media kit): PDFs up to 10 MB in a private bucket. An organization
+-- writes only inside its own folder (post-files/<organization id>/<file>); any signed-in organization can read.
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('post-files', 'post-files', false, 10485760, array['application/pdf']);
+
+create policy "organizations upload own post files" on storage.objects for insert to authenticated
+  with check (bucket_id = 'post-files' and (storage.foldername(name))[1] = (select auth.uid())::text);
+create policy "organizations delete own post files" on storage.objects for delete to authenticated
+  using (bucket_id = 'post-files' and (storage.foldername(name))[1] = (select auth.uid())::text);
+create policy "signed-in organizations read post files" on storage.objects for select to authenticated
+  using (bucket_id = 'post-files');

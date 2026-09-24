@@ -7,7 +7,7 @@ import { POST_KIND_LABELS, PROPOSAL_STATUS_LABELS, type PostKind, type ProposalS
 import { Spacing } from '@/constants/theme';
 import { useSession } from '@/features/auth/session';
 import { completeProposal, leaveReview, moveProposalStatus } from '@/features/posts/mutations';
-import { timeAgo } from '@/lib/format';
+import { formatMoney, timeAgo } from '@/lib/format';
 import { errorMessage, supabase } from '@/lib/supabase';
 import { Button } from '@/ui/button';
 import { Card } from '@/ui/card';
@@ -37,8 +37,9 @@ type Proposal = {
   status: ProposalStatus;
   created_at: string;
   thread_id: string | null;
+  tier: { name: string; price_cents: number | null } | null;
   from: { handle: string; name: string };
-  post: { id: string; title: string; kind: PostKind; owner: { handle: string; name: string } };
+  post: { id: string; title: string; kind: PostKind; currency: string; owner: { handle: string; name: string } };
 };
 
 export default function ProposalsScreen() {
@@ -53,7 +54,7 @@ export default function ProposalsScreen() {
       const query = supabase
         .from('proposals')
         .select(
-          'id, message, amount_cents, status, created_at, thread_id, from:organizations!proposals_from_id_fkey(handle, name), post:posts!proposals_post_id_fkey(id, title, kind, owner:organizations!posts_owner_id_fkey(handle, name))',
+          'id, message, amount_cents, status, created_at, thread_id, tier:post_tiers!proposals_tier_id_fkey(name, price_cents), from:organizations!proposals_from_id_fkey(handle, name), post:posts!proposals_post_id_fkey(id, title, kind, currency, owner:organizations!posts_owner_id_fkey(handle, name))',
         )
         .order('created_at', { ascending: false });
       const { data, error } = box === 'received' ? await query.neq('from_id', me) : await query.eq('from_id', me);
@@ -136,6 +137,17 @@ function ProposalCard({ proposal, received }: { proposal: Proposal; received: bo
         </Link>
       </View>
       <ThemedText>“{proposal.message}”</ThemedText>
+      {(proposal.tier || proposal.amount_cents != null) && (
+        <ThemedText type="smallStrong">
+          {[
+            proposal.tier &&
+              `Tier: ${proposal.tier.name}${proposal.tier.price_cents != null ? ` (${formatMoney(proposal.tier.price_cents, proposal.post?.currency)})` : ''}`,
+            proposal.amount_cents != null && `Offer: ${formatMoney(proposal.amount_cents, proposal.post?.currency)}`,
+          ]
+            .filter(Boolean)
+            .join(' · ')}
+        </ThemedText>
+      )}
       {received && proposal.status !== 'completed' ? (
         <ChoiceChips label="Status" options={MOVE_OPTIONS} value={proposal.status} onChange={move} error={error} />
       ) : (

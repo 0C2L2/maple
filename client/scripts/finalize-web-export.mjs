@@ -21,6 +21,6 @@ for (const file of readdirSync(dist, { recursive: true })) {
 }
 
 // Fail the build loudly if the route layout changes and the fallbacks stop being written.
-for (const expected of ['404.html', 'org/404.html', 'posts/404.html']) {
+for (const expected of ['404.html', 'org/404.html', 'posts/404.html', 'showcase/404.html']) {
   if (!existsSync(join(dist, expected))) throw new Error(`finalize-web-export: missing dist/${expected}`);
 }

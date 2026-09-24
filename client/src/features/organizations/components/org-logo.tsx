@@ -1,6 +1,7 @@
 import { Image } from 'expo-image';
 import { StyleSheet, Text, View } from 'react-native';
 
+import { Fonts } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 // The organization's logo, or its initials on a tinted square when there is no logo yet.
@@ -20,7 +21,7 @@ export function OrgLogo({ name, url, size = 48 }: { name: string; url: string | 
     <View
       aria-hidden
       style={[box, { backgroundColor: theme.backgroundSelected, alignItems: 'center', justifyContent: 'center' }]}>
-      <Text style={{ color: theme.text, fontWeight: 700, fontSize: size * 0.36 }}>{initials}</Text>
+      <Text style={{ fontFamily: Fonts.sans, color: theme.text, fontWeight: 700, fontSize: size * 0.36 }}>{initials}</Text>
     </View>
   );
 }

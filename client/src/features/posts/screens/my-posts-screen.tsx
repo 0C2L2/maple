@@ -61,6 +61,9 @@ function MyPostRow({ postId, post }: { postId: string; post: PostCardData }) {
           <Button title="Edit" variant="secondary" onPress={() => router.push(`/posts/${postId}/edit`)} />
           {post.status === 'open' ? (
             <Button title="Close" variant="secondary" onPress={() => changeStatus('closed')} />
+          ) : post.status === 'draft' ? (
+            // Drafts publish through the form, so they get its checks (like the event date).
+            <Button title="Finish and publish" variant="secondary" onPress={() => router.push(`/posts/${postId}/edit`)} />
           ) : (
             <Button title="Reopen" variant="secondary" onPress={() => changeStatus('open')} />
           )}

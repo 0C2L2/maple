@@ -112,14 +112,18 @@ mapleapp.tech  (marketplace model, D-026: posts, proposals, reviews; follow stay
 │
 ├── PUBLIC  (no login needed; pre-rendered so Google and link previews can read them)
 │   ├── /                                   Marketplace landing: search hero, latest posts, how it works
-│   ├── /find                               Browse posts (public; Following/Saved tabs need sign-in)
-│   ├── /pricing                            Plans and Boost prices (published in stage 7, D-019)
-│   ├── /org/[handle]                       Organization page (Posts + Reviews tabs)
+│   ├── /find                               Browse posts (public; Following/Saved tabs need sign-in; ?kind=, ?category=)
+│   ├── /how-it-works                       The deal step by step, tabs for organizers and sponsors (D-027)
+│   ├── /pricing                            "Free during early access"; plan prices published in stage 7 (D-019, D-027)
+│   ├── /about · /trust · /contact          About Maple, trust and safety, contact by topic (D-027)
+│   ├── /org/[handle]                       Organization page (Posts + Reviews tabs, Block, Report)
 │   ├── /posts/[id]                         Post page with Send proposal sidebar
 │   └── /legal/privacy · /legal/terms · /legal/community
 │
 ├── SIGN-IN  (D-020: one route for sign-in and sign-up)
-│   ├── /login                              Email code (Google, Apple, LinkedIn in v1.1)
+│   ├── /signup                             Create an account: email + password (D-030)
+│   ├── /login                              Sign in: email + password
+│   ├── /reset-password                     Forgot password: email → 6-digit code → new password
 │   ├── /auth/callback                      Return point after OAuth sign-in (web)
 │   └── /onboarding                         Pick a role, then create the organization page
 │
@@ -132,15 +136,15 @@ mapleapp.tech  (marketplace model, D-026: posts, proposals, reviews; follow stay
 │   ├── /notifications                      [tab] Notifications
 │   ├── /posts/new · /posts/[id]/edit       Post wizard (event post or sponsor post)
 │   ├── /boost?target=…                     Buy a Boost for a post or organization (v1.1)
-│   └── /settings                           Account, notifications, billing, delete account
+│   ├── /report?type=&id=                   Report a post, organization, or review (D-027)
+│   └── /settings                           Edit the page, sign out, delete account
 │
 ├── ADMIN  (Maple staff only)
-│   └── /admin                              Reports, verification, featured posts
+│   └── /admin                              Open reports: remove or dismiss (verification, featuring later)
 │
 └── SYSTEM
     ├── 404 page                            Any unknown URL
     ├── /premium  → 301 → /pricing          (D-019)
-    ├── /signup   → 301 → /login            (D-020)
     ├── /robots.txt · /sitemap.xml          For search engines
     ├── /og.png · favicon                   Link-preview image, browser icon
     └── /.well-known/…                      Makes mapleapp.tech links open the iOS/Android app
@@ -166,13 +170,17 @@ mapleapp.tech  (marketplace model, D-026: posts, proposals, reviews; follow stay
 | 1 | Home | `/` | Everyone | Pre-rendered | v1 | B | Built (marketplace landing) |
 | 2 | Privacy | `/legal/privacy` | Everyone | Pre-rendered | v1 | B | Built |
 | 3 | 404 | any unknown URL | Everyone | Pre-rendered | v1 | B | Built |
-| 4 | Terms | `/legal/terms` | Everyone | Pre-rendered | 8 | B | Not started |
-| 5 | Community guidelines | `/legal/community` | Everyone | Pre-rendered | 8 | B | Not started |
-| 6 | Pricing | `/pricing` | Everyone | Pre-rendered | 7 (not public before) | B | Placeholder (not linked) |
+| 4 | Terms | `/legal/terms` | Everyone | Pre-rendered | 8 | B | Built (draft, needs lawyer review) |
+| 5 | Community guidelines | `/legal/community` | Everyone | Pre-rendered | 8 | B | Built |
+| 6 | Pricing | `/pricing` | Everyone | Pre-rendered | v1 | B | Built ("free during early access", no prices) |
+| 6a | How it works | `/how-it-works` | Everyone | Pre-rendered | v1 | B | Built (D-027) |
+| 6b | About | `/about` | Everyone | Pre-rendered | v1 | B | Built (founder names to add) |
+| 6c | Trust and safety | `/trust` | Everyone | Pre-rendered | v1 | B | Built (D-027) |
+| 6d | Contact | `/contact` | Everyone | Pre-rendered | v1 | B | Built (email by topic) |
 | 7 | Organization | `/org/[handle]` | Everyone | Nightly + browser | 5 | B | Built (Posts + Reviews) |
 | 8 | Post | `/posts/[id]` | Everyone | Nightly + browser | 5 | A | Built |
 | 9 | Find | `/find` | Everyone (Following/Saved need login) | Browser | 5 | A | Built |
-| 10 | Sign in / sign up | `/login` | Logged-out | Browser | 4 | B | Built |
+| 10 | Sign up / sign in / reset password | `/signup`, `/login`, `/reset-password` | Logged-out | Browser | 4 | B | Built (D-030) |
 | 11 | Auth callback | `/auth/callback` | — | Browser | 4 | B | Not started |
 | 12 | Onboarding | `/onboarding` | New users | Browser | 4 | B | Built |
 | 13 | New / edit post | `/posts/new`, `/posts/[id]/edit` | Logged-in | Browser | 5 | A | Built |
@@ -182,8 +190,9 @@ mapleapp.tech  (marketplace model, D-026: posts, proposals, reviews; follow stay
 | 17 | Conversation | `/messages/[threadId]` | Participants | Browser | 6 | A | Built |
 | 18 | Notifications | `/notifications` | Logged-in | Browser | 6 | A | Placeholder |
 | 19 | Buy a Boost | `/boost` | Logged-in | Browser | 7 | B | Not started |
-| 20 | Settings | `/settings` | Logged-in | Browser | 8 | B | Placeholder |
-| 21 | Admin | `/admin` | Staff | Browser | 8 | A | Placeholder |
+| 20 | Settings | `/settings` | Logged-in | Browser | 8 | B | Built (edit page, sign out, delete account) |
+| 21 | Admin | `/admin` | Staff | Browser | 8 | A | Built (report queue) |
+| 22 | Report | `/report` | Logged-in | Browser | 8 | B | Built (D-027) |
 
 ## 4. Page specs: what each page shows and does
 
@@ -316,18 +325,19 @@ The database enforces the same checks, so a bad request can't bypass the form.
 - **Terms:** Maple isn't a party to sponsorship deals, plus acceptable use, paid plans and refunds, and account termination.
 - **Community guidelines:** no fake events, no inflated audience numbers, no spam pitches, respectful messaging. The App Store requires these rules for apps with user content.
 
-### 4.10 Sign in or sign up: `/login` (D-020)
-- **Shows:**
-  - Step 1: email field plus **Continue with Google / Apple / LinkedIn**.
-  - Step 2: a 6-digit code field, with **Resend** after 60 seconds.
+### 4.10 Sign up, sign in, and reset password: `/signup`, `/login`, `/reset-password` (D-030)
+- **`/signup` shows:** work email, password (8+ characters, letters and digits, Show/Hide), the Turnstile check, **Create account**, and the Terms line. Next step: a 6-digit code from the confirmation email, with **Send a new code** and **Use a different email**.
+- **`/login` shows:** email, password, **Forgot password?**, the Turnstile check, **Sign in**, and "New to Maple? Create an account".
+- **`/reset-password` shows:** email and the Turnstile check, then the 6-digit code with a new password.
 - **Actions:**
-  - A correct code signs you in, or creates the account if the email is new.
-  - New users go to `/onboarding`; returning users go to `?next=` or `/feed`.
+  - A confirmed sign-up or sign-in goes to `/onboarding` (no page yet, keeping `?role=`) or `/find`.
+  - Signing in with an unconfirmed email opens the code step.
+  - Wrong details show "Email or password is wrong" (no hint whether the email exists).
 - **Rules:**
-  - Supabase limits how often codes can be requested.
-  - Turnstile (bot check) is switched on only if bots show up.
-  - During beta, only invited emails can sign up.
-- **Events:** `signup_completed` for new users.
+  - Supabase limits how often emails and sign-in attempts can be made.
+  - Turnstile guards all three pages (local development uses Cloudflare's always-pass test keys).
+  - Production needs Resend SMTP and the Turnstile keys.
+- **Events:** `signup_completed` when onboarding creates the page (unchanged).
 
 ### 4.11 Auth callback: `/auth/callback`
 - Finishes Google or LinkedIn sign-in on the web, then routes the user the same way as `/login`. It shows only a spinner.

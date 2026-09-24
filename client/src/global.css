@@ -1,9 +1,194 @@
+/* Geist (SIL Open Font License), self-hosted from client/public/fonts. One variable file covers weights 100-900. */
+@font-face {
+  font-family: 'Geist';
+  src: url('/fonts/geist-latin-wght.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
   --font-display:
-    Spline Sans, Inter, ui-sans-serif, system-ui, sans-serif, Apple Color Emoji, Segoe UI Emoji,
-    Segoe UI Symbol, Noto Color Emoji;
+    Geist, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif, Apple Color Emoji,
+    Segoe UI Emoji, Segoe UI Symbol, Noto Color Emoji;
   --font-mono:
     ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, Courier New, monospace;
   --font-rounded: 'SF Pro Rounded', 'Hiragino Maru Gothic ProN', Meiryo, 'MS PGothic', sans-serif;
   --font-serif: Georgia, 'Times New Roman', serif;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --lift-shadow: 0 14px 30px -14px rgba(120, 45, 20, 0.3);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --lift-shadow: 0 16px 34px -14px rgba(0, 0, 0, 0.7);
+  }
+}
+:root[data-theme='dark'] {
+  --lift-shadow: 0 16px 34px -14px rgba(0, 0, 0, 0.7);
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+/* React Native Web gives inputs their own font; text components set theirs in ThemedText. */
+input[dir='auto'],
+textarea[dir='auto'] {
+  font-family: var(--font-display);
+}
+
+/*
+ * Motion. Components opt in with data-* attributes (see src/ui/motion.ts). Only transform, opacity, and
+ * filter animate. Everything that moves on its own is off for visitors who ask for reduced motion.
+ */
+
+/* Feedback: buttons dim or tint on hover and give on press; linked cards lift. */
+[data-press],
+[data-lift] {
+  transition:
+    transform 180ms var(--ease-out),
+    box-shadow 240ms var(--ease-out),
+    filter 180ms var(--ease-out),
+    background-color 180ms var(--ease-out);
+}
+@media (hover: hover) {
+  [data-press='primary']:hover {
+    filter: brightness(0.92);
+  }
+  [data-press='secondary']:hover {
+    background-color: rgba(128, 104, 92, 0.1);
+  }
+  [data-lift]:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--lift-shadow);
+  }
+}
+[data-press]:active {
+  transform: scale(0.98);
+}
+[data-press]:focus-visible,
+[data-lift]:focus-visible {
+  outline: 2px solid #c8331b;
+  outline-offset: 3px;
+}
+
+/* A soft maple-red light in the corner of the home hero. */
+[data-glow] {
+  background-image: radial-gradient(58% 64% at 92% 0%, rgba(200, 51, 27, 0.11), transparent 72%);
+}
+
+/* Carousel: cards snap into place; the row fades out at an edge that has more cards behind it. */
+[data-snap] {
+  scroll-snap-type: x mandatory;
+}
+[data-snap] > div > div {
+  scroll-snap-align: start;
+}
+[data-edges='end'] {
+  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 72px), transparent);
+  mask-image: linear-gradient(to right, #000 calc(100% - 72px), transparent);
+}
+[data-edges='start'] {
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 72px);
+  mask-image: linear-gradient(to right, transparent, #000 72px);
+}
+[data-edges='both'] {
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 72px, #000 calc(100% - 72px), transparent);
+  mask-image: linear-gradient(to right, transparent, #000 72px, #000 calc(100% - 72px), transparent);
+}
+
+@keyframes maple-rise {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+    filter: blur(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+}
+@keyframes maple-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(36px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes maple-slide-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: none;
+  }
+}
+@keyframes maple-open {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes maple-fill {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+  /* Page load: the hero arrives in order (data-enter="0".."4"). */
+  [data-enter] {
+    animation: maple-rise 680ms var(--ease-out) both;
+  }
+  [data-enter='1'] {
+    animation-delay: 70ms;
+  }
+  [data-enter='2'] {
+    animation-delay: 140ms;
+  }
+  [data-enter='3'] {
+    animation-delay: 210ms;
+  }
+  [data-enter='4'] {
+    animation-delay: 300ms;
+  }
+  /* Sections rise in as they scroll into view. Browsers without scroll timelines just show them. */
+  @supports (animation-timeline: view()) {
+    [data-reveal] {
+      animation: maple-reveal linear both;
+      animation-timeline: view();
+      animation-range: entry 0% cover 28%;
+    }
+  }
+  [data-bar] {
+    animation: maple-slide-up 360ms var(--ease-out) both;
+  }
+  [data-open] {
+    animation: maple-open 260ms var(--ease-out) both;
+  }
+  /* How it works: the active step's bar fills over the 5 seconds before the next step. */
+  [data-fill] {
+    transform-origin: left;
+    animation: maple-fill 5s linear both;
+  }
+  [data-crossfade] {
+    transition: opacity 600ms var(--ease-out);
+  }
+  [data-turn] {
+    transition: transform 220ms var(--ease-out);
+  }
 }

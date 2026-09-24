@@ -1,6 +1,7 @@
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 
-import type { AudienceType, Give, PostStatus } from '@/constants/taxonomy';
+import type { AudienceType, Deliverable, FileKind, Give, PostStatus } from '@/constants/taxonomy';
+import type { Pair } from '@/features/posts/mutations';
 import { POST_CARD_COLUMNS, type PostCardData } from '@/features/posts/components/post-card';
 import { track } from '@/lib/analytics';
 import { supabase } from '@/lib/supabase';
@@ -12,7 +13,10 @@ export type Tier = {
   price_cents: number | null;
   benefits: string;
   slots: number | null;
+  deliverables: Deliverable[];
 };
+
+export type PostFile = { id: string; kind: FileKind; name: string; path: string; size: number };
 
 export type PostDetailData = PostCardData & {
   status: PostStatus;
@@ -21,17 +25,43 @@ export type PostDetailData = PostCardData & {
   supports: Give[];
   audience_types: AudienceType[];
   ends_on: string | null;
+  venue: string | null;
+  cover_url: string | null;
   owner: { handle: string; name: string; tagline: string | null; logo_url: string | null };
   post_tiers: Tier[];
+  post_files: PostFile[];
+  currency: string;
+  goal_cents: number | null;
+  needs: string[];
+  deliverables: Deliverable[];
+  exclusivity: string | null;
+  custom_packages: boolean;
+  audience: Pair[];
+  reach: Pair[];
+  past_stats: Pair[];
+  agenda: Pair[];
+  people: Pair[];
+  use_of_funds: Pair[];
+  past_sponsors: string[];
+  languages: string[];
+  registrations: number | null;
+  decision_by: string | null;
+  report_by: string | null;
+  payment_terms: string | null;
+  /** Taken down by Maple staff; only the owner and staff still see the post. */
+  removed_at: string | null;
+  removed_reason: string | null;
 };
 
 export type PostResult = PostCardData & { owner_id: string; owner_handle: string; score?: number };
 
 const PAGE_SIZE = 20; // matches search_posts
 
-/** Drops empty filters; the database treats a missing key as "any". */
-export const cleanFilters = (filters: Record<string, string>) =>
-  Object.fromEntries(Object.entries(filters).filter(([, value]) => value));
+export type PostFilters = Record<string, string | string[]>;
+
+/** Drops empty filters (blank values, empty lists); the database treats a missing key as "any". */
+export const cleanFilters = (filters: PostFilters) =>
+  Object.fromEntries(Object.entries(filters).filter(([, value]) => (Array.isArray(value) ? value.length : value)));
 
 export function usePost(id: string) {
   return useQuery({
@@ -40,12 +70,24 @@ export function usePost(id: string) {
       const { data, error } = await supabase
         .from('posts')
         .select(
-          '*, owner:organizations!posts_owner_id_fkey(handle, name, tagline, logo_url), post_tiers(*)',
+          '*, owner:organizations!posts_owner_id_fkey(handle, name, tagline, logo_url), post_tiers(*), post_files(*)',
         )
         .eq('id', id)
         .maybeSingle();
       if (error) throw error;
       return data as unknown as PostDetailData | null;
+    },
+  });
+}
+
+/** Slots taken per tier (won and completed proposals), counted by the database for everyone. */
+export function useTierSlots(postId: string) {
+  return useQuery({
+    queryKey: ['posts', postId, 'tier-slots'],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('tier_slots', { post: postId });
+      if (error) throw error;
+      return Object.fromEntries((data as { tier_id: string; taken: number }[]).map((r) => [r.tier_id, r.taken]));
     },
   });
 }
@@ -66,8 +108,8 @@ export function useProposalCount(postId: string | undefined) {
   });
 }
 
-// Open posts matching a keyword query and filters, 20 at a time.
-export function usePostSearch(q: string, filters: Record<string, string>, source: 'find' | 'landing' = 'find') {
+// Open posts matching a keyword query and filters, 20 at a time (filters: see search_posts in core.sql).
+export function usePostSearch(q: string, filters: PostFilters, source: 'find' | 'landing' = 'find') {
   const clean = cleanFilters(filters);
   return useInfiniteQuery({
     queryKey: ['search', 'posts', q, clean],

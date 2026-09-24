@@ -39,6 +39,8 @@
 | D-024 | Build the full v1 now: no waitlist, no Phase 0 gate | Accepted | 2026-09-24 |
 | D-025 | Accounts are organizations, not people; LinkedIn's page structure | Accepted (structure replaced by D-026) | 2026-09-24 |
 | D-026 | A sponsorship marketplace like Upwork/Wishket: posts, proposals, reviews | Accepted | 2026-09-24 |
+| D-027 | Public website pages and safety tools before launch | Accepted | 2026-09-25 |
+| D-028 | One organization can both run events and sponsor others | Accepted | 2026-09-25 |
 
 ---
 
@@ -185,7 +187,7 @@
 - **Revisit when:** Never, unless marketing needs separate pages per audience.
 
 ## D-020: One sign-in route, `/login`, for sign-in and sign-up
-- **Status:** Proposed · 2026-09-24
+- **Status:** Replaced by D-030 · 2026-09-25 (was Proposed · 2026-09-24)
 - **Context:** With email codes (and Google, Apple, LinkedIn), entering an email either signs you in or creates your account. Separate `/signup` and `/login` pages would do the same thing.
 - **Decision:** `/login` handles both. `/signup` returns a 301 redirect to `/login`. New users continue to `/onboarding`.
 - **Consequences:** Less code and one flow to test. Buttons still say "Sign up" or "Sign in" where that reads better.
@@ -255,6 +257,37 @@
   - Analytics names change: `opportunity_created`/`event_created`/`post_created` → `post_created` (with `kind`); `quick_pitch_sent` → `proposal_sent`; `pitch_status_changed` → `proposal_status_changed`; new `deal_completed` and `review_left`.
 - **Consequences:** Less social engagement between deals; trust comes from reviews instead. Search matches posts, not a feed.
 - **Revisit when:** Organizations ask for a way to share updates outside of posts.
+
+## D-027: Public website pages and safety tools before launch
+- **Status:** Accepted · 2026-09-25
+- **Context:** Before signing up, visitors need to understand the marketplace and trust it (Wishket's public pages were the reference). App Store and Google Play also require in-app account deletion, report and block for user content, Terms acceptance, and a support contact.
+- **Decision:**
+  - Website header: Find events, Find sponsors, How it works, Pricing, Sign in, Join free (a menu on phones). Footer columns: Maple, For organizers, For sponsors, Legal.
+  - New public pages: `/how-it-works`, `/about`, `/trust`, `/contact` (one inbox, a subject per topic), `/legal/terms`, `/legal/community`. `/pricing` is published as "free during early access" with no prices (D-011 prices stay unpublished).
+  - Safety: Report on posts, organization pages, and reviews (`/report`); Block on organization pages (stops messages and proposals both ways); a staff queue at `/admin`; account deletion in Settings; a required Terms checkbox when creating an organization page.
+  - No fake numbers, logos, or testimonials; proof sections wait for real data.
+- **Consequences:** Contracts in [SHARED_CONTRACTS](../engineering/SHARED_CONTRACTS.md) §2, §3, §6, §8. The Terms and privacy notice are plain-language drafts that need a lawyer's review and the company's legal name before paid plans.
+- **Revisit when:** Support volume needs a contact form or a help center, or the first completed deals allow a success-stories page.
+
+## D-028: One organization can both run events and sponsor others
+- **Status:** Accepted · 2026-09-25 (revisits D-006)
+- **Context:** HABSIDA, the first real organization on Maple, runs a hackathon and also wants to sponsor other hackathons. Many companies do both, which is D-006's revisit trigger.
+- **Decision:** `organization.role` stays as the primary role (onboarding, Find defaults), but any organization can publish event posts and sponsor posts, and any organization except the post's owner can send a proposal. Find sponsors lists organizations with the sponsor role or an open sponsor post.
+- **Consequences:** The post insert rule and `send_proposal` no longer check the role. The new-post screen asks which kind. Past events live in `showcases` (Wishket-style portfolio) on `/showcase` and the organization page.
+- **Revisit when:** Organizations need separate team members per side (then add members and roles).
+
+## D-030: Email and password sign-in, with separate sign-up and sign-in pages
+- **Status:** Accepted · 2026-09-25 (replaces D-020 and the email-code-only sign-in in TECH_STACK)
+- **Context:** Email-code-only sign-in confused people: "Join free" and "Sign in" opened the same page, called "Sign in", and business users expect a password (as on Wishket and Upwork). It also leaned entirely on email arriving.
+- **Decision:**
+  - `/signup`: email + password (8+ characters, letters and digits). A 6-digit code confirms the email before the account works, then onboarding creates the organization page.
+  - `/login`: email + password, plus "Forgot password?". No email-code sign-in.
+  - `/reset-password`: email, then a 6-digit code, then a new password. Codes, not links, so it works in the apps without deep links.
+  - Settings has Change password.
+  - Cloudflare Turnstile guards sign-up, sign-in, and reset (Supabase Auth captcha). The apps show it in a web view (`react-native-webview`).
+  - No Google sign-in for now. When it comes, the apps add it together with Sign in with Apple, which Apple requires next to it.
+- **Consequences:** `/signup` is a page again (the 301 to `/login` is gone). "Join" buttons go to `/signup`; actions that need an account still go to `/login`. Production needs a real email sender (Resend SMTP) and the Turnstile keys before launch. Accounts made with email codes set a password with "Forgot password?".
+- **Revisit when:** People ask for Google sign-in, or organizations ask for SSO (SAML) or passkeys.
 
 ---
 

@@ -178,10 +178,11 @@ enable_anonymous_sign_ins = false
 # Allow/disallow testing manual linking of accounts
 enable_manual_linking = false
 # Passwords shorter than this value will be rejected as weak. Minimum 6, recommended 8 or more.
-minimum_password_length = 6
+# Maple (D-030): 8+ characters with letters and digits. The client checks the same rule (password-field.tsx).
+minimum_password_length = 8
 # Passwords that do not meet the following requirements will be rejected as weak. Supported values
 # are: `letters_digits`, `lower_upper_letters_digits`, `lower_upper_letters_digits_symbols`
-password_requirements = ""
+password_requirements = "letters_digits"
 
 # Configure passkey sign-ins.
 # [auth.passkey]
@@ -210,10 +211,13 @@ token_verifications = 30
 web3 = 30
 
 # Configure one of the supported captcha providers: `hcaptcha`, `turnstile`.
-# [auth.captcha]
-# enabled = true
-# provider = "hcaptcha"
-# secret = ""
+# Maple (D-030): Cloudflare Turnstile on sign-up, sign-in, and password reset. This secret is Cloudflare's
+# public always-pass TEST secret, for local development only (pair it with the test site key in
+# client/.env.example). Production uses the real secret, set in the Supabase dashboard, never here.
+[auth.captcha]
+enabled = true
+provider = "turnstile"
+secret = "1x0000000000000000000000000000000AA"
 
 [auth.email]
 # Allow/disallow new user signups via email to your project.
@@ -222,9 +226,10 @@ enable_signup = true
 # addresses. If disabled, only the new email is required to confirm.
 double_confirm_changes = true
 # If enabled, users need to confirm their email address before signing in.
-enable_confirmations = false
+# Maple: yes, with the 6-digit code from the confirmation email (D-030).
+enable_confirmations = true
 # If enabled, users will need to reauthenticate or have logged in recently to change their password.
-secure_password_change = false
+secure_password_change = true
 # Controls the minimum amount of time that must pass before sending another signup confirmation or password reset email.
 max_frequency = "1s"
 # Number of characters used in the email OTP.
@@ -232,14 +237,15 @@ otp_length = 6
 # Number of seconds before the email OTP expires (defaults to 1 hour).
 otp_expiry = 3600
 
-# Maple signs in with a 6-digit code (no links), so both emails show {{ .Token }}.
-[auth.email.template.magic_link]
-subject = "Your Maple sign-in code"
-content_path = "./supabase/templates/code.html"
-
+# Maple's emails carry 6-digit codes, not links, so they work the same on the website and in the apps
+# ({{ .Token }}). Confirmation: the last step of signing up. Recovery: forgot password.
 [auth.email.template.confirmation]
-subject = "Your Maple sign-in code"
-content_path = "./supabase/templates/code.html"
+subject = "Your Maple confirmation code"
+content_path = "./supabase/templates/confirm.html"
+
+[auth.email.template.recovery]
+subject = "Your Maple password reset code"
+content_path = "./supabase/templates/reset.html"
 
 # Use a production-ready SMTP server
 # [auth.email.smtp]

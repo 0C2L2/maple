@@ -22,7 +22,12 @@ import { OrgBanner, OrgLogo } from '@/features/organizations/components/org-logo
 import { useFollowerCount } from '@/features/organizations/components/org-summary-card';
 import { PostCard } from '@/features/posts/components/post-card';
 import { useOrgPosts } from '@/features/posts/queries';
-import { ReviewCard, useRatingSummary, useReviews } from '@/features/reviews';
+import { ReviewCard, useReviews } from '@/features/reviews';
+import { BlockButton } from '@/features/safety/components/block-button';
+import { ReportLink } from '@/features/safety/components/report-link';
+import { ShowcaseCard } from '@/features/showcase/components/showcase-card';
+import { useIsStaff } from '@/features/safety/use-is-staff';
+import { useShowcases } from '@/features/showcase/queries';
 import { useIsWide } from '@/hooks/use-is-wide';
 import { useTheme } from '@/hooks/use-theme';
 import { externalUrl, formatDate } from '@/lib/format';
@@ -35,7 +40,7 @@ import { Screen } from '@/ui/screen';
 import { TabStrip } from '@/ui/tab-strip';
 import { ThemedText } from '@/ui/themed-text';
 
-type Tab = 'posts' | 'reviews' | 'about';
+type Tab = 'posts' | 'showcase' | 'reviews' | 'about';
 
 /** /org/[handle]: an organization's page, like an Upwork agency profile. */
 export default function OrgScreen() {
@@ -71,33 +76,41 @@ function OrgPage({ org, tab }: { org: Organization; tab?: string }) {
   const { data: followers } = useFollowerCount(org.id);
   const { data: posts } = useOrgPosts(org.id);
   const { data: reviews } = useReviews(org.id);
-  const rating = useRatingSummary(org.id);
+  const { data: showcases } = useShowcases(org.id);
+  const { isStaff } = useIsStaff();
 
-  const { data: deals } = useQuery({
-    queryKey: ['organizations', org.id, 'deals'],
+  // Public totals (deals involve private proposals, so the database counts them for everyone).
+  const { data: totals } = useQuery({
+    queryKey: ['organizations', org.id, 'stats'],
     queryFn: async () => {
-      const { count, error } = await supabase
-        .from('proposals')
-        .select('*, post:posts!proposals_post_id_fkey!inner(owner_id)', { count: 'exact', head: true })
-        .eq('status', 'completed')
-        .or(`from_id.eq.${org.id},post.owner_id.eq.${org.id}`);
+      const { data, error } = await supabase.rpc('org_stats', { org: org.id }).single();
       if (error) throw error;
-      return count ?? 0;
+      return data as { open_posts: number; completed_deals: number; rating: number | null; reviews: number };
     },
   });
+  // Suspended pages are hidden from everyone but the organization itself and Maple staff.
+  if (org.suspended_at && !isMe && !isStaff)
+    return (
+      <Screen title="Page not available">
+        <Notice title="This page isn't available" body="This organization is suspended." action={{ title: 'Find posts', href: '/find' }} />
+      </Screen>
+    );
+  const active = totals?.open_posts ?? 0;
+  const deals = totals?.completed_deals ?? 0;
 
   const tabs = [
     { value: 'posts' as const, label: `Posts (${posts?.length ?? 0})` },
-    { value: 'reviews' as const, label: `Reviews (${reviews?.length ?? 0})` },
+    { value: 'showcase' as const, label: `Showcase (${showcases?.length ?? 0})` },
+    { value: 'reviews' as const, label: `Reviews (${totals?.reviews ?? 0})` },
     { value: 'about' as const, label: 'About' },
   ];
   const current: Tab = tabs.find((t) => t.value === tab)?.value ?? 'posts';
   const show = (next: Tab) => router.setParams({ tab: next });
 
   const stats = [
-    `${posts?.length ?? 0} active ${(posts?.length ?? 0) === 1 ? 'post' : 'posts'}`,
-    `${deals ?? 0} ${(deals ?? 0) === 1 ? 'deal' : 'deals'} completed`,
-    rating ? `${rating.avg}★ (${rating.count})` : null,
+    `${active} open ${active === 1 ? 'post' : 'posts'}`,
+    `${deals} ${deals === 1 ? 'deal' : 'deals'} completed`,
+    totals?.reviews ? `${totals.rating}★ (${totals.reviews})` : null,
     `${followers ?? 0} ${followers === 1 ? 'follower' : 'followers'}`,
     `On Maple since ${formatDate(org.created_at.slice(0, 10))}`,
   ].filter(Boolean);
@@ -117,6 +130,11 @@ function OrgPage({ org, tab }: { org: Organization; tab?: string }) {
           <ThemedText type="small" themeColor="textSecondary">
             {[orgMeta(org), ...stats].filter(Boolean).join(' · ')}
           </ThemedText>
+          {org.suspended_at && (
+            <ThemedText type="smallStrong" themeColor="danger">
+              Suspended by Maple staff{org.suspended_reason ? `: ${org.suspended_reason}` : ''}
+            </ThemedText>
+          )}
           <View style={styles.actions}>
             {isMe ? (
               <>
@@ -130,9 +148,11 @@ function OrgPage({ org, tab }: { org: Organization; tab?: string }) {
                 {org.website && (
                   <Button title="Visit website" variant="secondary" onPress={() => Linking.openURL(externalUrl(org.website!) as string)} />
                 )}
+                <BlockButton orgId={org.id} />
               </>
             )}
           </View>
+          {!isMe && <ReportLink type="organization" id={org.id} />}
         </View>
         <TabStrip tabs={tabs} value={current} onChange={show} />
       </Card>
@@ -142,6 +162,17 @@ function OrgPage({ org, tab }: { org: Organization; tab?: string }) {
           posts.map((post) => <PostCard key={post.id} post={post} />)
         ) : (
           <Notice title="No posts yet" action={isMe ? { title: 'Post', href: '/posts/new' } : undefined} />
+        ))}
+
+      {current === 'showcase' &&
+        (showcases?.length ? (
+          <View style={styles.showcases}>
+            {showcases.map((s) => (
+              <ShowcaseCard key={s.id} showcase={s} />
+            ))}
+          </View>
+        ) : (
+          <Notice title="No showcases yet" body="Past events appear here with photos and results." />
         ))}
 
       {current === 'reviews' &&
@@ -215,4 +246,5 @@ const styles = StyleSheet.create({
   actions: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two, marginTop: Spacing.two },
   section: { gap: Spacing.three, padding: Spacing.four },
   aboutRow: { gap: Spacing.half },
+  showcases: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.three },
 });

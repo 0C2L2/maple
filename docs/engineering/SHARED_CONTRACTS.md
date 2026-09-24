@@ -55,6 +55,17 @@ These change [MVP §10](../product/MVP.md#10-data-model-core-tables):
 | `org_views` **(renamed from `profile_views`)** | `viewer_id`, `org_id`, `viewed_on` (date) · unique per viewer per day | Organization page views |
 | `threads` **(changed)** | `post_id` (nullable, was `opportunity_id`), `matched_at` (nullable `timestamptz`) · `proposals.thread_id` is the proposal→thread link | Show the linked post; the north-star metric |
 | `organizations.handle` | unique, lowercase, `^[a-z0-9-]{3,40}$`, **not editable by users in the MVP** | No redirect history needed |
+| `organizations.terms_accepted_at` **(new)** | `timestamptz`, defaults to the time the page is created | Onboarding requires the "I agree to the Terms and Community guidelines" checkbox |
+| `ranking_weights` **(new)** | `key` (`text`, `category`, `region`, `audience`), `weight` · read-only for the app | Search weights live in the database (CLAUDE.md), tuned with SQL |
+| `reports` **(new, safety)** | `id`, `reporter_id`, `target_type` (`post`/`organization`/`review`), `target_id`, `reason` (`spam`/`scam`/`fake`/`offensive`/`other`), `details`, `status` (`open`/`removed`/`dismissed`), `created_at` · unique (`reporter_id`, `target_type`, `target_id`) | Report button; private to the reporter and staff |
+| `blocks` **(new, safety)** | `blocker_id`, `blocked_id`, `created_at` · primary key (`blocker_id`, `blocked_id`) | A block stops messages, conversations, and proposals both ways |
+| `posts` pitch fields **(new)** | `venue`, `cover_url`, `currency` (ISO code), `goal_cents` (smallest unit of `currency`), `needs[]`, `deliverables[]` (keys in `valid_deliverables()`), `exclusivity`, `custom_packages`, `audience` / `reach` / `past_stats` / `agenda` / `people` / `use_of_funds` (jsonb `[{label, value}]`), `past_sponsors[]`, `languages[]`, `registrations`, `decision_by`, `report_by`, `payment_terms` | The event page pitches sponsors: the ask, deliverables, packages, audience, plan, timeline |
+| `post_tiers.deliverables` **(new)** | `text[]`, same keys | Package comparison table |
+| `post_files` **(new)** | `id`, `post_id`, `kind` (`deck`/`plan`/`media_kit`/`other`), `name`, `path` (`<org id>/<file>` in the private `post-files` bucket), `size` · listed publicly, downloadable by signed-in organizations | Sponsorship decks and event plans (PDF ≤ 10 MB) |
+| `staff` **(new)** | `user_id` · rows added with `supabase/scripts/make-admin.mjs` | Who can use `/admin` |
+| `organizations.suspended_at/suspended_reason`, `posts.removed_at/removed_reason` **(new)** | set only by the admin functions | Suspended pages and taken-down posts are hidden from everyone but the owner and staff |
+| `admin_actions` **(new)** | `staff_id`, `action`, `target_id`, `target_label`, `reason`, `created_at` · staff read only | Audit log of every admin action |
+| `showcases` **(new, D-028)** | `id`, `org_id`, `post_id`, `title`, `summary`, `body`, `categories[]`, `starts_on`, `ends_on`, `city`, `venue`, `facts` (jsonb `[{label, value}]`), `highlights[]`, `sponsors[]` (names), `cover_url`, `gallery[]` (org-media URLs only), `link` · public read, owner writes | Past events, like Wishket's portfolio (`/showcase`) |
 
 **General rules:**
 - Primary keys are `uuid`, except the waitlist.
@@ -67,31 +78,67 @@ These change [MVP §10](../product/MVP.md#10-data-model-core-tables):
 Called with `supabase.rpc(name, args)`. The page size is **20**.
 
 ```sql
--- Posts: ranked (MVP §7.1), Boost slots placed (MVP §7.2)
--- Filter keys are singular; the database treats a missing key as "any".
+-- Posts: open posts only, ranked with ranking_weights (MVP §7.1). Public (security definer) so
+-- proposal_count is the real total. Boost slots (MVP §7.2) arrive with Boost; boosted is false until then.
 search_posts(q text, filters jsonb default '{}', page int default 0)
   returns table (id uuid, kind post_kind, title text, owner_id uuid, owner_name text,
                  owner_handle text, owner_logo_url text, categories category[], regions text[],
-                 budget_band budget_band, attendance_band attendance_band, deadline date,
-                 proposal_count int, score real, boosted boolean)
+                 budget_band budget_band, attendance_band attendance_band, starts_on date, city text,
+                 online boolean, deadline date, created_at timestamptz, proposal_count int,
+                 score real, boosted boolean)
 
 search_organizations(q text, filters jsonb default '{}', page int default 0)
-  returns table (id uuid, handle text, name text, kind org_kind, role org_role, logo_url text,
-                 score real)
+  returns table (id uuid, handle text, name text, tagline text, role org_role, kind org_kind,
+                 location text, logo_url text)
 
-record_post_view(post_id uuid) returns void        -- no-op for anonymous visitors or self-views
-record_org_view(org_id uuid) returns void
+-- Find sponsors (D-028): sponsor-role organizations or ones with an open sponsor post. filters: category, region.
+search_sponsors(q text default '', filters jsonb default '{}', page int default 0)
+  returns table (id, handle, name, tagline, location, logo_url, categories, regions, gives, budget_band,
+                 open_sponsor_posts int, completed_deals int, rating numeric, reviews int)
+category_counts() returns table (category category, posts int)   -- open posts per event type (home page)
+tier_slots(post uuid) returns table (tier_id uuid, taken int)      -- won + completed proposals per tier
+
+-- Public totals for an organization page (deals are counted from private proposals).
+org_stats(org uuid) returns table (open_posts int, completed_deals int, rating numeric, reviews int)
+
+-- The deal
+send_proposal(post uuid, message text, tier_id uuid default null, amount_cents int default null)
+  returns uuid                                     -- the new thread; any organization but the owner (D-028)
+complete_proposal(proposal uuid) returns void      -- a won deal, either side, after the event
+leave_review(proposal uuid, rating int, body text default '') returns uuid
+start_conversation(other uuid) returns uuid
+
+record_post_view(post uuid) returns void           -- no-op for anonymous visitors or self-views
+record_org_view(org uuid) returns void
+
+-- Safety
+blocked_with(other uuid) returns boolean           -- the signed-in org and `other` blocked each other
+is_staff() returns boolean
+open_reports() returns table (id, target_type, target_id, reason, details, created_at,
+                              reporter_name, target_text, target_link)   -- staff only, else empty
+resolve_report(report uuid, remove boolean) returns void  -- staff: take down / suspend / delete review, or dismiss
+admin_set_suspended(org uuid, suspend boolean, reason text) returns void  -- staff: hide page + posts, ban login, sign out
+admin_set_post_removed(post uuid, remove boolean, reason text) returns void  -- staff: take a post down or restore it
+admin_delete(target_type text, target uuid, reason text) returns void  -- staff: organization or post, for good
+admin_broadcast(audience text, orgs uuid[], body text) returns int  -- staff: DM all | organizers | sponsors | selected
+admin_organizations(q) · admin_posts(q) · admin_log()  -- staff lists for /admin (empty for everyone else)
+delete_account() returns void                      -- deletes the login; everything else cascades
 ```
 
-**`filters` keys** (all optional; a tab ignores keys that don't apply to it):
+`send_proposal` refuses after the post's `deadline`, after an event post's event ends, and for a sold-out tier. `search_posts` hides those posts and also returns `currency` and `goal_cents`. `send_proposal` and `start_conversation` refuse, and new messages are rejected, when the two organizations blocked each other. Internal helpers used by RLS: `owns_post`, `is_thread_participant`, `thread_blocked`, `org_media_urls`.
+
+**`search_posts` `filters` keys** (all optional; a missing key means "any"):
 
 | Key | Type |
 |---|---|
 | `kind` | `post_kind` (`event` \| `sponsor`) |
+| `categories` | JSON array of `category`; matches posts with any of them |
 | `category` | `category` |
 | `region` | `text` |
 | `budget_band` | `budget_band` |
 | `attendance_band` | `attendance_band` |
+| `match` | an organization id: rank by fit with its page and hide its own posts (Best matches) |
+| `sort` | `recent` (newest first), `deadline` (closing soonest), or `fewest` (fewest proposals); otherwise by score |
 
 **Boost rules** (only `search_posts`, D-005):
 - Boosted rows appear only in positions 1 and 6 of each page.
@@ -113,7 +160,8 @@ record_org_view(org_id uuid) returns void
 | `revenuecat-webhook` | RevenueCat event | `200`. Writes `subscriptions` (`source` = store). |
 | `notify` | Database webhook (new proposal, message, follow, review) | Sends push + email |
 | `digest` | Cron | Sends digests and saved-search alerts |
-| `delete-account` | `POST { confirm: "DELETE" }` | `{ deleted: true }` |
+
+Account deletion is **not** an Edge Function: the app removes the organization's `org-media` files, then calls `delete_account()` (§3).
 
 ## 5. Storage buckets
 
@@ -135,6 +183,9 @@ Components one feature exports for others to use, through its `index.ts`. The pr
 | `ReviewCard` | B | `{ review: ReviewCardData }` | Organization Reviews tab |
 | `PaywallGate` | B | `{ feature: PremiumFeature; children }`. It shows children, or a lock + **See plans**. | Find filters, who viewed, read receipts |
 | `useSession()` | B | returns `{ session, org, isLoading, refreshOrg }` | Everyone |
+| `Gate` | B | `{ isPublic: boolean; children }`. Waits for the session, sends accounts without a page to `/onboarding` and signed-out visitors to `/login` unless public. Used as a navigator's `screenLayout`, so navigators mount on the first render. | `(app)` and `(tabs)` layouts |
+| `ReportLink` | B | `{ type: 'post' \| 'organization' \| 'review'; id: string }` → `/report` | Post page, Organization page, ReviewCard |
+| `BlockButton` | B | `{ orgId: string }`. Hidden for your own page. | Organization page |
 | `usePlan()` | B | returns `{ plan, isPremium, limits }` from `subscriptions` | Everyone |
 
 `*CardData` types are the row shapes returned by the matching search functions in §3, exported from each feature's `index.ts`.
@@ -158,7 +209,10 @@ Components one feature exports for others to use, through its `index.ts`. The pr
 ## 8. Routes and redirects
 
 - The route list in [WEBSITE_PLAN §2](WEBSITE_PLAN.md#2-site-map) is a contract. Adding, renaming, or removing a route needs a decision entry.
-- Redirects: `/premium` → `/pricing` (D-019), `/signup` → `/login` (D-020).
+- Redirects: `/premium` → `/pricing` (D-019).
+- Auth routes (D-030): `/signup` (create an account; `?role=organizer|sponsor` carries on to onboarding), `/login` (sign in), `/reset-password` (forgot password). "Join" buttons go to `/signup`; actions that need an account go to `/login`.
+- Public website pages (D-027, D-028): `/`, `/find`, `/sponsors`, `/showcase`, `/showcase/[id]`, `/posts/[id]`, `/org/[handle]`, `/how-it-works` (`?for=organizers|sponsors`), `/pricing`, `/about`, `/trust`, `/contact`, `/legal/terms`, `/legal/privacy`, `/legal/community`. `/find` accepts `?q=`, `?kind=event|sponsor`, and `?category=`.
+- Signed-in only: `/report?type=&id=`, `/admin` (staff), plus the product routes in WEBSITE_PLAN §2.
 - Link with typed routes (`href="/posts/123"`). Never build URLs by string concatenation in several places; use a helper exported by the owning feature, e.g. `postHref(id)`.
 
 ## 9. Migrations
