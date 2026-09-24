@@ -23,11 +23,11 @@
 
 ## 0. Setup checklist (before day 1)
 
-Keep it lazy: everything here is no-code and can be thrown away later.
+Keep it lazy: everything here except the Phase 0 website is no-code and can be thrown away later. The website itself stays frozen to Home, Privacy, 404, and the waitlist (D-021).
 
 - [ ] **Name check.** Search trademarks for "Maple" in classes 9, 35, 42, and 45 (USPTO and the WIPO Global Brand Database). Other companies already use the name (see [DECISIONS.md](../product/DECISIONS.md#open-decisions-to-make-before-or-during-phase-0)). Keep 2–3 backup names ready.
 - [ ] **Domain and social handles.** Claim the free domain from the GitHub Student Pack and put it on Cloudflare ([BUILD_PLAN.md Stage 0](../engineering/BUILD_PLAN.md#stage-0-accounts-company-and-domain)). Check social handles for the name you choose.
-- [ ] **Landing page and waitlist.** Carrd, Framer, or Webflow, plus a Tally or Typeform form that feeds a Google Sheet
+- [ ] **Landing page and waitlist.** The Phase 0 website on mapleapp.tech ([WEBSITE_PLAN §9](../engineering/WEBSITE_PLAN.md#9-step-by-step-build-plan), W2–W5), with the waitlist in one Supabase table, or a Tally form that feeds a Google Sheet as the fallback
 - [ ] **Newsletter tool.** Beehiiv, Buttondown, or Substack, for Maple Weekly
 - [ ] **Founder email** on the new domain
 - [ ] **Booking link** (Cal.com or Calendly) with 30-minute slots
@@ -126,10 +126,10 @@ Copy this for every interview. Scripts are in [RESEARCH.md §8](RESEARCH.md#8-in
 - *Who's on Maple?* We're starting with tech events, hackathons, and the companies that sponsor them.
 - *When does it launch?* Private beta in early 2027. Join the waitlist for early access.
 
-**Waitlist form fields**
-- Name, email, role (Organizer / Sponsor), organization
-- Organizers: event type, next event date, expected attendance
-- Sponsors: event types you sponsor, typical budget per event (band)
+**Waitlist form fields** (the exact fields and checks are in [WEBSITE_PLAN §4.1](../engineering/WEBSITE_PLAN.md#41-home-))
+- Role (Organizer / Sponsor), name, email, organization (optional)
+- Organizers: expected attendance band (optional)
+- Sponsors: typical budget per event band (optional)
 - "Can we contact you for a 20-minute call?" (Y/N)
 
 ## 6. Maple Weekly (concierge newsletter template)

@@ -21,8 +21,8 @@
 | 10 → 15% | [2. Dev environment and repo](#stage-2-dev-environment-and-repo) | Nov, week 1 | "Hello Maple" runs on web, Android, and your iPhone |
 | 15 → 25% | [3. Backend foundation](#stage-3-backend-foundation) | Nov, weeks 1–2 | Schema, security, and sign-in work, and tests pass in CI |
 | 25 → 30% | [4. App shell](#stage-4-app-shell-all-3-platforms) | Nov, week 2 | Sign up + onboarding on all 3 platforms, web auto-deploys |
-| 30 → 45% | [5. Profiles, events, opportunities, feed](#stage-5-profiles-events-opportunities-feed) | Nov, week 3 – Dec, week 1 | MVP Flow A works |
-| 45 → 60% | [6. Search, network, pitches, messaging, notifications](#stage-6-search-network-pitches-messaging-notifications) | Dec, week 2 – Jan, week 1 | MVP Flows B + C work, push arrives on phones |
+| 30 → 45% | [5. Organizations, posts, Find](#stage-5-organizations-posts-find) | Nov, week 3 – Dec, week 1 | MVP Flow A works |
+| 45 → 60% | [6. Proposals, messaging, notifications](#stage-6-proposals-messaging-notifications) | Dec, week 2 – Jan, week 1 | MVP Flows B + C work, push arrives on phones |
 | 60 → 70% | [7. Payments, Premium, Boost](#stage-7-payments-premium-boost-web) | Jan, weeks 1–2 | Flow D works with a real card |
 | 70 → 80% | [8. Hardening](#stage-8-hardening) | Jan, weeks 3–4 | Store rules, security, analytics, and legal pages done |
 | 80 → 88% | [9. Private beta](#stage-9-private-beta) | Feb – Mar 2027 | Beta running on web, TestFlight, and Play closed testing |
@@ -68,16 +68,16 @@
   5. If the company isn't ready by January, enroll as individuals and start Google's 12-tester closed test on day 1 of beta (Stage 9).
 - [ ] **0.8 Password vault.** Put every login in one shared vault (1Password is in the Student Pack).
 
-**Done when:** `https://yourdomain` resolves through Cloudflare, `hello@` forwards to Gmail, and Apple and Google enrollment is submitted.
+**Done when:** `https://mapleapp.tech` resolves through Cloudflare, `hello@` forwards to Gmail, and Apple and Google enrollment is submitted.
 
 ---
 
 ## Stage 1: Validation
 
-**5 → 10% · October.** Follow [VALIDATION.md](../research/VALIDATION.md). No app code yet. The only tech tasks:
+**5 → 10% · October.** Follow [VALIDATION.md](../research/VALIDATION.md). No product code. The only tech tasks are the Phase 0 website in [WEBSITE_PLAN.md §9](WEBSITE_PLAN.md#9-step-by-step-build-plan) (W0–W5), under its freeze rule (D-021):
 
-- [ ] Landing page: a no-code builder (Carrd, Framer), or one static HTML page on Cloudflare (free)
-- [ ] Waitlist form: Tally feeding a Google Sheet
+- [ ] Landing page, Privacy, and 404 from the existing draft in `client/`, deployed on Cloudflare
+- [ ] Waitlist: one Supabase `waitlist` table (or Tally → Google Sheet). No other tables, no accounts.
 - [ ] Verify the domain in Resend. Add its DNS records (SPF, DKIM) plus a DMARC record in Cloudflare, so confirmation emails don't land in spam.
 
 **Done when:** the go/no-go meeting says **Go**. If it says Iterate or Stop, don't start Stage 2.
@@ -102,9 +102,9 @@
   In `client/app.json`, set:
   - `web.output: "static"` (pre-rendered web pages)
   - `ios.supportsTablet: false` (skips iPad screenshots and iPad review)
-  - `ios.bundleIdentifier` / `android.package` = `com.<company>.maple`
+  - `ios.bundleIdentifier` / `android.package` = `tech.mapleapp.app` (already set in the draft)
   - `scheme: "maple"`
-- [ ] **2.5 Add libraries:** NativeWind, TanStack Query, `@supabase/supabase-js`, react-hook-form, zod.
+- [ ] **2.5 Add libraries:** TanStack Query, `@supabase/supabase-js`, react-hook-form, zod. Styling uses `StyleSheet` + the tokens in [DESIGN_SYSTEM.md](../product/DESIGN_SYSTEM.md) (D-023). Restructure the draft into `src/features/` + `src/ui/` ([WEBSITE_PLAN §8](WEBSITE_PLAN.md#8-folder-structure), D-022).
 - [ ] **2.6 Local backend:**
   ```bash
   npx supabase init      # at the repo root → creates supabase/
@@ -125,7 +125,7 @@
   ```
 - [ ] **2.10 Spike (1 day): prove web hosting.** Deploy `npx expo export --platform web` to Cloudflare. Confirm three things:
   1. A pre-rendered public page shows its content and Open Graph tags in "view source"
-  2. Logged-in routes load through the single-page-app fallback
+  2. Dynamic URLs that weren't pre-rendered (e.g. `/org/any-handle`) load their page template through the per-folder `404.html` fallback (`client/scripts/finalize-web-export.mjs`; already verified locally with Wrangler)
   3. The custom domain works
 
   If any of these fails, pick the fallback in [TECH_STACK.md §4.2](TECH_STACK.md#42-website-delivery-expo-web-export--cloudflare) **now**, not later.
@@ -143,17 +143,18 @@
   - "User A can't edit user B's profile"
   - "Only participants can read a thread"
   - "Nobody can read another user's billing"
-- [ ] **3.3 Search:** add a `tsvector` column, a GIN index, and `pg_trgm`. Write the `search_opportunities()` function with the score from [MVP.md §7.1](../product/MVP.md#71-organic-score) and the Boost slots from [§7.2](../product/MVP.md#72-boost-paid-search-priority), and seed the `ranking_weights` table. Test the Boost rules: max 2 per 10 results, relevance ≥ 0.3, flagged as boosted.
-- [ ] **3.4 Plan limits:** write SQL functions and triggers for active opportunities, Quick Pitches per month, and connection requests per week.
+- [ ] **3.3 Search:** add a `tsvector` column, a GIN index, and `pg_trgm`. Write `search_posts()` (plus `search_organizations()`, signatures in [SHARED_CONTRACTS §3](SHARED_CONTRACTS.md#3-database-functions-rpc)) with the score from [MVP.md §7.1](../product/MVP.md#71-organic-score) and the Boost slots from [§7.2](../product/MVP.md#72-boost-paid-search-priority), and seed the `ranking_weights` table. Test the Boost rules: max 2 per 10 results, relevance ≥ 0.3, flagged as boosted.
+- [ ] **3.4 Plan limits:** write SQL functions and triggers for active posts, proposals per month, and follows per week.
 - [ ] **3.5 Storage buckets:**
-  - `avatars`, `logos`, `event-photos`: public read
-  - `media-kits`: private, served through signed links
+  - `org-media`: public read (logos, banners)
+  - `post-media`: public read (post images)
+  - `message-attachments`: private, readable only by the thread's participants ([SHARED_CONTRACTS §5](SHARED_CONTRACTS.md#5-storage-buckets))
 - [ ] **3.6 Auth settings:**
   - Email **6-digit code** (OTP)
   - Google, Apple, and LinkedIn (OIDC) providers
   - **Custom SMTP = Resend**
   - Redirect URLs for the website and the `maple://` scheme
-- [ ] **3.7 Seed data:** `supabase/seed.sql` with categories, regions, and 20 fake events and opportunities for development.
+- [ ] **3.7 Seed data:** `supabase/seed.sql` with categories, regions, and 20 fake posts for development.
 - [ ] **3.8 Types:** generate them, and re-run after every migration:
   ```bash
   npx supabase gen types typescript --local > client/types/database.ts
@@ -175,14 +176,14 @@
 - [ ] **4.2 Design basics:**
   - Color, type, and spacing tokens in the Tailwind config
   - Core components: Button, Input, Card, Avatar, Badge, Modal, EmptyState
-  - Light and dark mode through NativeWind
+  - Light and dark mode through the theme tokens ([DESIGN_SYSTEM.md](../product/DESIGN_SYSTEM.md))
 - [ ] **4.3 Sign-in screens:**
   - Email → code
   - Google
   - Apple (iOS + web)
   - LinkedIn
   - The session stays saved on every platform
-- [ ] **4.4 Onboarding:** role pick → a 3-step profile ([MVP.md §4.1](../product/MVP.md#41-auth-and-onboarding)).
+- [ ] **4.4 Onboarding:** role pick → create the organization page ([MVP.md §4.1](../product/MVP.md#41-auth-and-onboarding)).
 - [ ] **4.5 Website auto-deploy:** a GitHub Action runs on every merge to `main`:
   ```bash
   npx expo export --platform web && npx wrangler deploy
@@ -194,42 +195,41 @@
 
 ---
 
-## Stage 5: Profiles, events, opportunities, feed
+## Stage 5: Organizations, posts, Find
 
 **30 → 45% · November, week 3 – December, week 1** (MVP sprints S1–S2)
 
-- [ ] **5.1** Organizer and sponsor profiles, organization pages, and work-email domain verification (Verified company badge)
-- [ ] **5.2** Events, with import-from-URL (`import-event` Edge Function)
-- [ ] **5.3** Opportunities: Sponsorship Packages with tiers, and Calls for Events
-- [ ] **5.4** Posts with intent and images (pick → resize → upload), the feed query, likes, and comments
-- [ ] **5.5 Public SEO pages:**
-  - Pre-render `/in/[handle]`, `/org/[slug]`, `/opportunities/[id]`, and `/explore/[category]/[region]` with Open Graph tags
+- [ ] **5.1** Organization pages (organizer + sponsor roles) and work-email domain verification (Verified company badge)
+- [ ] **5.2** Posts: event posts (plan, dates, place inside) and sponsor posts, with tiers and images (pick → resize → upload)
+- [ ] **5.3** Find: browse + filters + Following/Saved tabs, backed by `search_posts()`
+- [ ] **5.4 Public SEO pages:**
+  - Pre-render `/org/[handle]` and `/posts/[id]` with Open Graph tags
   - Add a **nightly** GitHub Action that rebuilds and redeploys the website
-- [ ] **5.6 Deep links:**
+- [ ] **5.5 Deep links:**
   - Serve `/.well-known/apple-app-site-association` and `/.well-known/assetlinks.json` from the domain
   - Set `associatedDomains` (iOS) and `intentFilters` (Android) in `app.json`
   - Tapping a Maple link on a phone then opens the app
 
-**Done when:** [MVP Flow A](../product/MVP.md#6-key-user-flows) (an organizer lists a package) works on all 3 platforms.
+**Done when:** [MVP Flow A](../product/MVP.md#6-key-user-flows) (an organizer posts their event) works on all 3 platforms.
 
 ---
 
-## Stage 6: Search, network, pitches, messaging, notifications
+## Stage 6: Proposals, messaging, notifications
 
 **45 → 60% · December, week 2 – January, week 1** (MVP sprints S3–S4)
 
-- [ ] **6.1** Search screen with tabs and filters, calling the `search_opportunities` function, plus saved searches
-- [ ] **6.2** Follow, connect, and suggestions
-- [ ] **6.3** Quick Pitch, the Pitches inbox with statuses, and "mark Won" (creates a `deals` row)
+- [ ] **6.1** Find filters + saved searches; organization search via `search_organizations()`
+- [ ] **6.2** Follow organizations + Following tab
+- [ ] **6.3** Proposals inbox with statuses, "mark Won", "mark Completed", and post-event reviews
 - [ ] **6.4** Messaging with Supabase Realtime: attachments, unread counts, block and report
 - [ ] **6.5 Notifications:**
   - In-app list
   - **Push:** `expo-notifications` saves tokens to `push_tokens`. Create a Firebase project and upload its FCM key to EAS for Android; EAS handles the iOS key. A database webhook calls the `notify` Edge Function.
   - Email through Resend
   - Digests through `pg_cron` → the `digest` function
-- [ ] **6.6** "Who viewed your profile / opportunity"
+- [ ] **6.6** "Who viewed your post / page"
 
-**Done when:** Flows B and C work on all 3 platforms, and a new pitch triggers a push on the phone plus an email.
+**Done when:** Flows B and C work on all 3 platforms, and a new proposal triggers a push on the phone plus an email.
 
 ---
 
@@ -245,7 +245,7 @@
   stripe listen --forward-to localhost:54321/functions/v1/stripe-webhook
   ```
 - [ ] **7.3** The `subscriptions` and `boosts` tables drive everything. Plan limits read the user's plan from there.
-- [ ] **7.4 Paywall and `/premium` page:**
+- [ ] **7.4 Paywall and `/pricing` page (D-019; published only once D-011 prices are accepted):**
   - **Website:** buy with Stripe
   - **iOS/Android during beta:** show Premium status and features, but no purchase buttons. People buy on the web until Stage 10 adds in-app purchases.
 - [ ] **7.5** Boost purchase, monthly Boost credits, and the "Boosted" label in results
@@ -286,7 +286,7 @@
   - [ ] Upgrade `maple-prod` to **Supabase Pro** ($25/mo) for daily backups and no pausing
   - [ ] Deploy migrations and functions
   - [ ] Set the production environment variables in EAS and Cloudflare
-- [ ] **8.8 Seed content:** 100 real opportunities, posted with the organizers' permission.
+- [ ] **8.8 Seed content:** 100 real posts, published with the organizations' permission.
 
 **Done when:** the [MVP definition of done](../product/MVP.md#12-build-timeline-12-weeks-2-week-sprints) is met.
 

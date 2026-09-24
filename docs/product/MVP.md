@@ -152,7 +152,7 @@ Opportunities come in two types. Both sides can post.
 
 ### 4.14 Product analytics
 Track these events (PostHog):
-`signup_completed` · `role_selected` · `profile_completed` · `event_created` · `opportunity_created` · `post_created` · `search_performed` · `search_result_clicked` · `quick_pitch_sent` · `pitch_status_changed` · `message_sent` · `matched_conversation` (both sides replied) · `deal_won` · `checkout_started` · `subscription_started` · `boost_purchased` · `boost_impression` · `boost_click`
+`signup_completed` · `role_selected` · `profile_completed` · `post_created` (with `kind`: `event` | `sponsor`) · `search_performed` · `search_result_clicked` · `proposal_sent` · `proposal_status_changed` · `message_sent` · `matched_conversation` (both sides replied) · `deal_completed` · `review_left` · `checkout_started` · `subscription_started` · `boost_purchased` · `boost_impression` · `boost_click`
 
 ## 5. Out of scope for the MVP
 
@@ -161,9 +161,8 @@ Track these events (PostHog):
 | Web push notifications | In-app notifications and email cover the website. iOS and Android get push in the MVP. | Web users ask for it |
 | Maple Scout / Sponsor Suite team plans | Need individual usage first | ≥20 teams ask for shared pipelines |
 | Promoted Opportunities (CPC) and Ads | Need traffic first | ≥50K monthly active users |
-| AI Fit Score / recommendations | Rule-based matching is enough to learn | ≥1,000 pitches to train on |
+| AI Fit Score / recommendations | Rule-based matching is enough to learn | ≥1,000 proposals to train on |
 | Ticketing integrations (verified attendance) | Needs partner APIs | Phase 3 |
-| Partner reviews / endorsements | Need completed deals first | ≥100 deals won |
 | Contracts, escrow, payouts (Maple Deals) | Legal and financial complexity | Phase 4 |
 | Groups / Communities, newsletters, live | Not core to the loop | Phase 4 |
 | Dual-role accounts | Edge case | Users ask for it |
@@ -258,7 +257,7 @@ The full tech plan (what each tool does, why we chose it, how we use it, free ti
 
 | Layer | Choice |
 |---|---|
-| Website + iOS + Android | One **Expo** (React Native + Expo Router) codebase, TypeScript, NativeWind |
+| Website + iOS + Android | One **Expo** (React Native + Expo Router) codebase, TypeScript, `StyleSheet` + theme tokens ([DESIGN_SYSTEM.md](DESIGN_SYSTEM.md), D-023) |
 | Web hosting, DNS, email forwarding | **Cloudflare** (free) |
 | Database, auth, storage, realtime, server functions, cron | **Supabase** (Postgres + Row Level Security, Edge Functions) |
 | Search | **Postgres full-text + `pg_trgm`** (D-008) |
@@ -273,48 +272,47 @@ Expected cost: **$0 during the build**, about **$25–70 a month from beta** ([T
 
 | Table | Key columns |
 |---|---|
-| `profiles` | id (= auth user), role (`organizer`/`sponsor`), handle, name, headline, bio, photo_url, location, categories[], regions[], audience_types[], audience_band, budget_band, gives[], completeness, is_premium |
-| `organizations` | id, slug, name, type, domain, logo_url, about, verified |
-| `organization_members` | org_id, profile_id, role (`admin`/`member`), verified_email |
-| `events` | id, owner_id, org_id, name, starts_at, ends_at, city, online, category, attendance_band, audience_types[], url, status |
-| `opportunities` | id, type (`package`/`call`), owner_id, event_id (nullable), title, body, categories[], regions[], budget_band, audience_band, gives[], wants[], deadline, status, search_vector |
-| `opportunity_tiers` | id, opportunity_id, name, price_cents, in_kind, benefits[], slots |
-| `pitches` | id, opportunity_id, from_id, note, status (`new`/`shortlisted`/`in_talks`/`won`/`declined`), featured, thread_id |
-| `posts` | id, author_id, intent (`offering`/`seeking`/`update`/`recap`), body, images[], opportunity_id, event_id, categories[], regions[] |
-| `comments`, `reactions` | post_id, author_id, … |
-| `connections` | requester_id, addressee_id, status, note |
-| `follows` | follower_id, target_profile_id / target_org_id |
-| `threads`, `thread_participants`, `messages` | standard 1:1 messaging, read_at |
-| `profile_views` | viewer_id, viewed_profile_id / viewed_opportunity_id, viewed_at |
+| `organizations` | id (= auth user), role (`organizer`/`sponsor`), kind, handle, name, tagline, about, location, website, logo_url, banner_url, categories[], regions[], audience_types[], attendance_band, budget_band, gives[] (D-025) |
+| `posts` | id, kind (`event`/`sponsor`), owner_id, title, body (event plan / sponsor description), categories[], regions[], budget_band (goal / per-event budget), attendance_band, audience_types[], supports[] (kinds of support, `give` enum), benefits (what sponsors get / what sponsor wants), starts_on, ends_on, city, online, deadline, status (`draft`/`open`/`closed`), search_vector. One post = one event (D-026) |
+| `post_tiers` | id, post_id, position, name, price_cents, benefits, slots (priced tiers on event posts) |
+| `proposals` | id, post_id, from_id, message, tier_id (nullable), amount_cents (nullable), status (`new`/`shortlisted`/`in_talks`/`won`/`declined`/`completed`), thread_id. Unique (post_id, from_id) |
+| `reviews` | id, post_id, proposal_id, reviewer_id, reviewee_id, rating (1–5), body. Unique (proposal_id, reviewer_id). Only deal participants after `completed`; public (replaces likes/comments, D-026) |
+| `follows` | follower_id, org_id (stays, D-026) |
+| `saved_posts` | owner_id, post_id, created_at (bookmarks; replaces follow-as-save) |
+| `threads`, `thread_participants`, `messages` | standard 1:1 messaging, read_at; `threads` also has post_id, proposal_id, matched_at |
+| `post_views` | viewer_id, post_id, viewed_on (one row per viewer per day) |
+| `org_views` | viewer_id, org_id, viewed_on (one row per viewer per day) |
 | `saved_searches` | owner_id, query, filters (jsonb), alert_frequency |
-| `subscriptions` | profile_id, stripe_customer_id, plan, status, current_period_end, pitchmail_credits |
-| `boosts` | id, owner_id, kind (`search`/`opportunity`/`profile`), target_id, category, region, starts_at, ends_at, stripe_payment_id |
-| `deals` | pitch_id, organizer_id, sponsor_id, value_band, won_at |
+| `subscriptions` | org_id, stripe_customer_id, plan, status, current_period_end |
+| `boosts` | id, owner_id, kind (`search`/`post`/`org`), target_id, category, region, starts_at, ends_at, stripe_payment_id |
+| `deals` | proposal_id, organizer_id, sponsor_id, value_cents, won_at, completed_at |
 | `reports` | reporter_id, target_type, target_id, reason, status |
 | `notifications` | recipient_id, type, payload (jsonb), read_at |
 | `ranking_weights` | key, value (the tunable search weights from §7) |
 
 Row Level Security on every table: users can write only their own rows, and all content is public-read except messages, views, and billing.
 
+Exact enum values, the four search functions, and the storage buckets (including the private `message-attachments` bucket) are in [SHARED_CONTRACTS.md](../engineering/SHARED_CONTRACTS.md).
+
 ## 11. Pages and screens
 
 | Route | Screen |
 |---|---|
-| `/` | Landing page (logged out) / Feed (logged in) |
-| `/signup`, `/login`, `/onboarding` | Auth + role pick + 3-step profile |
-| `/feed` | Feed with composer (intent picker) |
-| `/search` | Unified search with tabs and filters |
-| `/in/[handle]` | Person profile |
-| `/org/[slug]` | Organization page |
-| `/events/[id]`, `/events/new` | Event page, create or import |
-| `/opportunities/[id]`, `/opportunities/new` | Package / Call for Events page, create |
-| `/pitches` | Pitches inbox (sent and received) with statuses |
-| `/messages`, `/messages/[threadId]` | Messaging |
+| `/` | Marketplace landing (logged out) / Find (logged in) |
+| `/login`, `/auth/callback`, `/onboarding` | Sign in or sign up in one flow (D-020; `/signup` redirects here) + role pick + organization create |
+| `/find` | Browse posts + organizations with filters (Best matches · Most recent · Following · Saved). Public (D-026) |
+| `/posts/[id]` | Post page (plan, supports/gives, benefits, tiers) + sticky Send proposal / View proposals sidebar. Public |
+| `/posts/new`, `/posts/[id]/edit` | Post wizard: basics → plan → supports → benefits + tiers → review |
+| `/my-posts` | Your posts with status + proposal counts, edit, close |
+| `/proposals` | Proposals inbox: Received (grouped by post) + Sent, with statuses |
+| `/org/[handle]` | Organization page (Posts + Reviews tabs, Upwork-agency style) |
+| `/messages`, `/messages/[threadId]` | Messaging (two-pane) |
 | `/notifications` | Notifications |
-| `/network` | Connections, requests, suggestions |
-| `/premium` | Plan comparison + Boost store |
+| `/pricing` | Plan comparison + Boost prices (D-019; `/premium` redirects here) |
 | `/settings` | Account, privacy, billing (links to Stripe Portal) |
 | `/admin` | Moderation queue, verification, featuring |
+
+The full route list, with every page's behavior, is in [WEBSITE_PLAN.md §2–4](../engineering/WEBSITE_PLAN.md#2-site-map).
 | `/explore/[category]/[region]` | Public SEO pages (e.g. "Hackathons seeking sponsors in NYC") |
 
 ## 12. Build timeline (12 weeks, 2-week sprints)
@@ -323,10 +321,10 @@ The step-by-step version, with setup commands, app store steps, and beta, is in 
 
 | Sprint | Weeks | Deliverables |
 |---|---|---|
-| **S1** | 1–2 | Repo, CI, Supabase project, design system basics, auth (email code, Google, Apple, LinkedIn), role pick, onboarding, profiles, organizations + domain verification |
-| **S2** | 3–4 | Events (with URL import), Opportunities (packages + calls + tiers), posts, feed, likes and comments |
-| **S3** | 5–6 | Search (FTS + filters + organic ranking), follow and connect, suggestions panel, public SEO pages |
-| **S4** | 7–8 | Quick Pitch, Pitches inbox + statuses + deals, messaging (realtime), notifications (in-app + email) |
+| **S1** | 1–2 | Repo, CI, Supabase project, design system basics, auth (email code), role pick, onboarding, organizations |
+| **S2** | 3–4 | Posts (event + sponsor kinds, tiers inside the post), Find browse, saved posts |
+| **S3** | 5–6 | Search ranking (FTS + filters), follow + Following tab, org pages with Reviews, public post pages |
+| **S4** | 7–8 | Proposals inbox + statuses + deal completion + reviews, messaging (realtime), notifications (in-app + email) |
 | **S5** | 9–10 | Stripe (plans, Checkout, Portal, webhooks), Premium gating and limits, Boost purchase + slot logic, who viewed, saved searches + alerts |
 | **S6** | 11–12 | Admin and moderation, rate limits, analytics events, QA, performance pass, seed 100 opportunities, beta invites |
 

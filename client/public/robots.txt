@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+# Expo also writes copies of each page under route-group folders like /(public)/; skip those.
+Disallow: /(
+
+Sitemap: https://mapleapp.tech/sitemap.xml

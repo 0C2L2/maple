@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Phase 0: only the pages that are live. Pricing is added in stage 7 (D-019), other public pages in stage 5.5. -->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://mapleapp.tech/</loc></url>
+  <url><loc>https://mapleapp.tech/legal/privacy</loc></url>
+</urlset>

@@ -55,7 +55,7 @@ There is no server of our own to run. The apps talk straight to Supabase, and se
 
 ## 3. Why this stack
 
-1. **One codebase for web, iOS, and Android.** With 1–2 developers, separate web and mobile codebases would double the UI work for every feature. Bluesky (a social network with feeds, profiles, and DMs, the same kind of product as Maple) ships web, iOS, and Android from one Expo codebase.
+1. **One codebase for web, iOS, and Android.** With 1–2 developers, separate web and mobile codebases would double the UI work for every feature. Upwork-style marketplaces (listings, proposals, messages on every platform) ship the same way from one Expo codebase.
 2. **Works from Windows.** EAS builds the iOS app in the cloud, so you don't need a Mac to build or submit it.
 3. **$0 until real users arrive.** Everything has a free tier that covers development and most of beta.
 4. **Few moving parts.** No servers, no queues, no caches. Business rules sit in Postgres, next to the data.
@@ -65,10 +65,10 @@ There is no server of our own to run. The apps talk straight to Supabase, and se
 
 ### 4.1 The app: Expo + React Native + Expo Router
 - **What:** Expo is a toolkit for building React Native apps. Expo Router maps files to screens, and the same files work as website pages.
-- **Why:** You write each screen once. The same URL (`/opportunities/123`) is a web page and an app screen, and shared links open in the app.
+- **Why:** You write each screen once. The same URL (`/posts/123`) is a web page and an app screen, and shared links open in the app.
 - **How:**
-  - Screens live in `client/app/`, one file per route.
-  - **Styling:** NativeWind (Tailwind classes that work on web and native).
+  - Route files live in `client/src/app/` and re-export screens from `client/src/features/<feature>/` (D-022, [WEBSITE_PLAN §8](WEBSITE_PLAN.md#8-folder-structure)).
+  - **Styling:** React Native `StyleSheet` with the tokens in [DESIGN_SYSTEM.md](../product/DESIGN_SYSTEM.md) (D-023). No styling library.
   - **Data:** `supabase-js` + TanStack Query for caching, retries, and pagination. No separate state library.
   - **Forms:** react-hook-form + zod. The same zod schemas validate input in the app and in Edge Functions.
   - **Platform differences:** only where needed, using `file.web.tsx` / `file.native.tsx`.
@@ -78,14 +78,14 @@ There is no server of our own to run. The apps talk straight to Supabase, and se
     - `expo-notifications`
     - `expo-apple-authentication` and `@react-native-google-signin/google-signin`
     - `expo-web-browser` (LinkedIn login)
-  - **Layouts:** a sidebar + feed + right panel on wide desktop screens, and bottom tabs on phones.
+  - **Layouts:** a top bar + content on wide desktop screens, and bottom tabs (Find · My posts · Proposals · Messages · Notifications) on phones.
 
 ### 4.2 Website delivery: Expo web export → Cloudflare
 - **What:** `npx expo export --platform web` builds static files, and Cloudflare serves them from its global CDN.
 - **Why:** Static hosting on Cloudflare is free with unlimited requests. There is no server to run or pay for.
 - **How:**
-  - **Public pages** that should appear in Google are **pre-rendered to HTML** at build time with Expo Router static rendering. That covers the landing page, `/explore/[category]/[region]`, and opportunity, profile, and organization pages. They include Open Graph tags, so shared links show a preview on LinkedIn, X, and WhatsApp.
-  - **Logged-in pages** (feed, messages, pitches) render in the browser, using Cloudflare's single-page-app fallback.
+  - **Public pages** that should appear in Google are **pre-rendered to HTML** at build time with Expo Router static rendering. That covers the landing page, Find, and post and organization pages. They include Open Graph tags, so shared links show a preview on LinkedIn, X, and WhatsApp.
+  - **Logged-in pages** (my posts, proposals, messages) render in the browser. URLs that weren't pre-rendered (e.g. a new post) are served their route's template through a per-folder `404.html` fallback, written after each build by `client/scripts/finalize-web-export.mjs`.
   - A GitHub Action rebuilds and redeploys the site **on every merge to `main` and once a night**, so new public pages reach search engines within a day.
   - Cloudflare also serves `/.well-known/apple-app-site-association` and `/.well-known/assetlinks.json`, so Maple links open in the app on phones.
   - **Fallback:** if nightly pre-rendering isn't fresh enough for SEO, switch public pages to Expo Router **server rendering** on EAS Hosting (free tier: 100K requests/month) or Cloudflare Workers. [BUILD_PLAN.md](BUILD_PLAN.md) has a 1-day spike in week 1 to confirm this.
@@ -112,12 +112,12 @@ There is no server of our own to run. The apps talk straight to Supabase, and se
 | Part | Used for | How |
 |---|---|---|
 | **Postgres** | All data ([MVP.md §10](../product/MVP.md#10-data-model-core-tables)) | Schema changes are SQL files in `supabase/migrations/`, applied with `supabase db push`. Never edit the production schema by hand. |
-| **Row Level Security** | The security boundary | Every table has policies. Users write only their own rows, and messages, profile views, and billing are private. Tested with pgTAP. |
-| **SQL functions (RPC)** | Search ranking and Boost slots (`search_opportunities`), plan limits, matched-conversation detection | One implementation of each rule, used by all three platforms |
+| **Row Level Security** | The security boundary | Every table has policies. Users write only their own rows, and messages, views, and billing are private. Tested with pgTAP (`supabase test db --local`). |
+| **SQL functions (RPC)** | Search (`search_posts` with Boost slots, `search_organizations`), proposals (`send_proposal`, `complete_proposal`, `leave_review`), view recording, plan limits, matched-conversation detection | One implementation of each rule, used by all three platforms. Signatures in [SHARED_CONTRACTS §3](SHARED_CONTRACTS.md#3-database-functions-rpc). |
 | **Full-text search** | Search | A `tsvector` column + GIN index + `pg_trgm` (D-008) |
 | **Auth** | Sign-in | Email **6-digit code** (works on every platform without magic-link deep links), Google, Apple, LinkedIn (OIDC). On iOS, Apple requires a privacy-focused login option like Sign in with Apple when Google or LinkedIn login is offered. |
 | **Realtime** | Live messages, unread counts | Subscribe to new rows in `messages` for the open thread |
-| **Storage** | Photos, logos, media-kit PDFs | Buckets protected by RLS. The app resizes images before upload to stay inside the free 1 GB. |
+| **Storage** | Logos, banners, post images, message attachments | Buckets protected by RLS: `org-media`, `post-media` (public), `message-attachments` (thread participants only). See [SHARED_CONTRACTS §5](SHARED_CONTRACTS.md#5-storage-buckets). The app resizes images before upload to stay inside the free 1 GB. |
 | **Edge Functions** | Code that needs secret keys | See the table below |
 | **Cron** (`pg_cron`) | Email digests, saved-search alerts | Scheduled SQL that calls the `digest` function |
 
@@ -129,9 +129,8 @@ There is no server of our own to run. The apps talk straight to Supabase, and se
 | `stripe-portal` | The app | Returns a Stripe Customer Portal link |
 | `stripe-webhook` | Stripe | Verifies the signature, then updates `subscriptions` / `boosts` |
 | `revenuecat-webhook` | RevenueCat | Records App Store / Google Play purchases (Build Plan Stage 10) |
-| `notify` | Database webhook on a new pitch, message, or connection | Sends push (Expo) and email (Resend) |
+| `notify` | Database webhook on a new proposal, message, follow, or review | Sends push (Expo) and email (Resend) |
 | `digest` | Cron (daily / weekly) | Email digests and saved-search alerts |
-| `import-event` | The app | Reads Open Graph tags from an Eventbrite, Luma, or Meetup URL |
 | `delete-account` | The app | Deletes the user and their data (required by Apple and Google) |
 
 Boosts expire because the search query filters by date, so no expiry job is needed.
@@ -157,7 +156,7 @@ Local development runs the whole stack in Docker with `supabase start`.
 
 ### 4.6 Email: Resend + Cloudflare Email Routing
 - **Sending** (login codes, notifications, digests) goes through Resend. Supabase's built-in email is for testing only and is heavily rate-limited, so Resend is plugged into Supabase Auth as custom SMTP. Edge Functions call Resend's API for everything else.
-- **Receiving:** Cloudflare Email Routing forwards `hello@`, `support@`, and `legal@` to your Gmail. To reply as `hello@yourdomain`, add Resend's SMTP to Gmail's "Send mail as" setting.
+- **Receiving:** Cloudflare Email Routing forwards `hello@`, `support@`, and `legal@` to your Gmail. To reply as `hello@mapleapp.tech`, add Resend's SMTP to Gmail's "Send mail as" setting.
 - **DNS:** add Resend's SPF and DKIM records plus a DMARC record in Cloudflare, so emails don't land in spam.
 - **Watch the limit:** the free plan allows 100 emails a day. Keep digests weekly during beta, and move to Resend Pro when daily sends pass about 80.
 
@@ -195,29 +194,19 @@ Local development runs the whole stack in Docker with `supabase start`.
 
 ## 5. Repo layout
 
+The full, current folder tree (feature folders, D-022) is in [WEBSITE_PLAN §8](WEBSITE_PLAN.md#8-folder-structure). In short:
+
 ```
 maple/
-├── README.md
-├── CLAUDE.md
-├── docs/                      ← planning only
-│   ├── business/  research/  product/
-│   └── engineering/           ← TECH_STACK.md, BUILD_PLAN.md
-├── client/                    ← the Expo app: website + iOS + Android
-│   ├── app/                   ← screens/routes (Expo Router)
-│   │   ├── (public)/          ← pre-rendered for SEO: landing, explore, opportunity, profile, org
-│   │   ├── (auth)/            ← sign in, onboarding
-│   │   └── (app)/             ← logged in: feed, search, pitches, messages, settings
-│   ├── components/
-│   ├── lib/                   ← Supabase client, queries, hooks, zod schemas
-│   ├── types/database.ts      ← generated from the database schema
-│   ├── app.json · eas.json    ← app config, build profiles
-│   └── wrangler.jsonc         ← Cloudflare deploy config for the website
-└── supabase/                  ← the backend
-    ├── migrations/            ← every schema change, in order
-    ├── functions/             ← Edge Functions
-    ├── tests/                 ← pgTAP tests
-    ├── seed.sql
-    └── config.toml
+├── docs/          ← planning only
+├── client/        ← the Expo app: website + iOS + Android
+│   └── src/
+│       ├── app/          ← route files only (Expo Router)
+│       ├── features/     ← one folder per feature, one owner each (OWNERSHIP.md)
+│       ├── ui/           ← design-system components (DESIGN_SYSTEM.md)
+│       ├── constants/    ← theme tokens, site constants, taxonomy
+│       └── lib/          ← Supabase client, generated DB types, analytics, images
+└── supabase/      ← migrations, Edge Functions, pgTAP tests, seed data
 ```
 
 ## 6. Free tiers

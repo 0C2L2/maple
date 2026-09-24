@@ -1,0 +1,13 @@
+// Cloudflare deploy config for the website. Deploy with `npm run deploy:web` (after `npx wrangler login`).
+// The custom domain only works once mapleapp.tech is added to your Cloudflare account (Build Plan 0.4).
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "maple-web",
+  "compatibility_date": "2026-09-01",
+  "assets": {
+    "directory": "./dist",
+    "not_found_handling": "404-page",
+    "html_handling": "auto-trailing-slash"
+  },
+  "routes": [{ "pattern": "mapleapp.tech", "custom_domain": true }]
+}
