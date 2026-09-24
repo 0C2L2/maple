@@ -5,7 +5,7 @@
 | | |
 |---|---|
 | Last updated | 2026-09-24 |
-| Companion docs | [PLAN.md](PLAN.md) · [RESEARCH.md](RESEARCH.md) · [MVP.md](MVP.md) |
+| Companion docs | [PLAN.md](PLAN.md) · [RESEARCH.md](../research/RESEARCH.md) · [MVP.md](../product/MVP.md) |
 
 > **Note on figures:** top-down numbers come from third-party research firms that often disagree, so ranges are shown. Bottom-up numbers and projections are **our assumptions** and are labeled as such. Re-check any figure before it goes into an investor deck.
 
@@ -120,7 +120,7 @@ Organizers are more budget-constrained than job seekers, so organizer plans are 
 | **Sponsored post / Sponsored PitchMail** *(phase 4)* | CPM / per send | Ads product, like LinkedIn Marketing Solutions |
 | **Maple Deals fee** *(phase 4)* | 3–5% of deal value | Contracts, escrow, and payouts on-platform |
 
-**Boost integrity rules:** boosted items are labeled "Boosted", capped at 2 per 10 results, and must meet a minimum relevance score. The mechanics are in [MVP.md](MVP.md#7-search-ranking-and-boost).
+**Boost integrity rules:** boosted items are labeled "Boosted", capped at 2 per 10 results, and must meet a minimum relevance score. The mechanics are in [MVP.md](../product/MVP.md#7-search-ranking-and-boost).
 
 ## 7. Revenue projection (illustrative, our assumptions)
 

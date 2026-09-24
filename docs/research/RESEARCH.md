@@ -6,7 +6,7 @@
 |---|---|
 | Last updated | 2026-09-24 |
 | Method | Desk research (public reports, competitor sites, pricing pages). Primary interviews are planned in Phase 0. |
-| Companion docs | [PLAN.md](PLAN.md) · [MARKET.md](MARKET.md) · [MVP.md](MVP.md) |
+| Companion docs | [PLAN.md](../business/PLAN.md) · [MARKET.md](../business/MARKET.md) · [MVP.md](../product/MVP.md) |
 
 > **Note on figures:** third-party numbers below come from public reports and articles (see [Sources](#10-sources)). Research firms often disagree, so ranges are shown where they differ. Re-check any figure before it goes into an investor deck.
 

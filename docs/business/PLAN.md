@@ -6,7 +6,7 @@
 |---|---|
 | Status | Pre-build (concept + validation) |
 | Last updated | 2026-09-24 |
-| Companion docs | [RESEARCH.md](RESEARCH.md) · [MARKET.md](MARKET.md) · [MVP.md](MVP.md) |
+| Companion docs | [RESEARCH.md](../research/RESEARCH.md) · [MARKET.md](MARKET.md) · [MVP.md](../product/MVP.md) |
 
 ---
 
@@ -25,7 +25,7 @@ LinkedIn made hiring a searchable, always-on market. Sponsorship still runs on c
 | Their audience data is self-reported, so sponsors don't trust it | Can't compare events, prices, or past results |
 | Sponsor renewals are getting harder because ROI is hard to prove | There's no single place to say "we have budget for X, send us events" |
 
-Full evidence and sources: [RESEARCH.md](RESEARCH.md).
+Full evidence and sources: [RESEARCH.md](../research/RESEARCH.md).
 
 ## 3. The solution: LinkedIn's model, mapped to sponsorship
 
@@ -88,21 +88,21 @@ Mirrors LinkedIn's four revenue lines and adds pay-as-you-go visibility. Full pr
 Today is late September 2026. The dates assume a small team (see section 7).
 
 ### Phase 0: Validate (Oct 2026, 4 weeks)
-- 40 interviews: 20 organizers and 20 sponsors (script in [RESEARCH.md](RESEARCH.md#8-interview-plan))
+- 40 interviews: 20 organizers and 20 sponsors (script in [RESEARCH.md](../research/RESEARCH.md#8-interview-plan))
 - Landing page with a waitlist and two CTAs: "I'm organizing" and "I'm sponsoring"
 - **Concierge MVP:** a weekly "Maple Weekly" email of 20 hand-picked events seeking sponsors, sent to sponsors. Introductions are made manually.
 - Pre-sell Premium at a founder price ($99/year lifetime-locked) to test willingness to pay
 - **Exit criteria:** ≥300 waitlist signups, ≥15 paid pre-sales or letters of intent, ≥5 sponsors who ask for intros from the newsletter
 
 ### Phase 1: MVP build (Nov 2026 – Jan 2027, 12 weeks)
-- Build the scope in [MVP.md](MVP.md): profiles, organizations, events, opportunities, feed, search with Boost, messaging, Quick Pitch, Premium, and Stripe billing
+- Build the scope in [MVP.md](../product/MVP.md) as **one Expo codebase that ships the website, iOS app, and Android app** (D-015): profiles, organizations, events, opportunities, feed, search with Boost, messaging, Quick Pitch, Premium, and Stripe billing. Step by step: [BUILD_PLAN.md](../engineering/BUILD_PLAN.md).
 - **Exit criteria:** all MVP flows work end to end, Stripe runs in live mode, 100 seeded opportunities are ready
 
 ### Phase 2: Private beta, then public launch (Feb – Apr 2027)
-- Private beta: 150 organizers and 40 sponsors in the beachhead niche (tech events and hackathons)
+- Private beta: 150 organizers and 40 sponsors in the beachhead niche (tech events and hackathons), on the website, TestFlight (iOS), and Google Play closed testing
 - Weekly releases driven by feedback. Instrument the funnel.
-- Public launch: Product Hunt, Show HN, and dev-rel communities
-- **Exit criteria:** see the MVP success metrics in [MVP.md](MVP.md#14-success-metrics-first-90-days-after-beta)
+- Public launch on the website, App Store, and Google Play: Product Hunt, Show HN, and dev-rel communities
+- **Exit criteria:** see the MVP success metrics in [MVP.md](../product/MVP.md#14-success-metrics-first-90-days-after-beta)
 
 ### Phase 3: Growth (May – Dec 2027)
 - Maple Scout and Sponsor Suite (team plans)
@@ -110,7 +110,6 @@ Today is late September 2026. The dates assume a small team (see section 7).
 - Ticketing integrations (Eventbrite, Luma) for Verified Audience
 - AI Fit Score and recommendations
 - Partner reviews after confirmed deals
-- Mobile apps (iOS and Android)
 - Second niche (for example university/student events or music and culture festivals)
 
 ### Phase 4: Scale (2028+)
@@ -125,7 +124,7 @@ Today is late September 2026. The dates assume a small team (see section 7).
 | Phase | Team |
 |---|---|
 | 0: Validate | Founder(s). No engineers needed; use no-code for the landing page and newsletter. |
-| 1: MVP | 1–2 full-stack engineers, 1 part-time product designer, founder as PM and sales |
+| 1: MVP | 1–2 full-stack engineers (React Native/Expo + Postgres), 1 part-time product designer, founder as PM and sales |
 | 2: Launch | + 1 growth/community lead (focused on the sponsor side) |
 | 3: Growth | + 2 engineers, 1 data/ML engineer, 1 sales rep for Scout/Suite, 1 support/trust & safety person |
 
@@ -133,8 +132,9 @@ Today is late September 2026. The dates assume a small team (see section 7).
 
 | Item | Monthly | Notes |
 |---|---|---|
-| Hosting and infra (Vercel, Supabase, Resend, PostHog, Sentry) | $100–$250 | Free tiers cover early beta |
+| Hosting and infra (Cloudflare, Supabase, Expo, Resend, PostHog, Sentry) | $0 during the build, ~$25–70 from beta | Details: [TECH_STACK.md](../engineering/TECH_STACK.md#7-what-it-costs-stage-by-stage) |
 | Stripe | 2.9% + 30¢ per charge | Paid only on revenue |
+| App stores | Apple $99/year, Google $25 once | Needed to publish the iOS and Android apps. App-store purchases carry a 15% commission. |
 | Design tools, domain, email | ~$60 | |
 | Marketing experiments | $1,000–$3,000 | Community sponsorships, which also let us dogfood the product |
 | Legal (ToS, privacy policy, company setup) | $1,500–$3,000 one-time | |
@@ -174,10 +174,13 @@ Today is late September 2026. The dates assume a small team (see section 7).
 
 ## 12. Next 14 days
 
+Full step-by-step playbook with templates: [VALIDATION.md](../research/VALIDATION.md).
+
+- [ ] Run the name and trademark check for "Maple" (see [DECISIONS.md](../product/DECISIONS.md#open-decisions-to-make-before-or-during-phase-0))
 - [ ] Buy the domain and set up a landing page with a waitlist (two role CTAs)
-- [ ] Write the interview script (see [RESEARCH.md](RESEARCH.md#8-interview-plan)) and book the first 10 interviews
+- [ ] Write the interview script (see [RESEARCH.md](../research/RESEARCH.md#8-interview-plan)) and book the first 10 interviews
 - [ ] Build a list of 100 tech events and hackathons looking for sponsors in the beachhead region
 - [ ] Build a list of 50 dev-rel and community managers at SaaS, dev-tool, and cloud companies
 - [ ] Send the first "Maple Weekly" to 20 sponsors
 - [ ] Set up Stripe and a pre-sale payment link for founder pricing
-- [ ] Decide the stack and repo (see [MVP.md](MVP.md#9-tech-stack))
+- [ ] Claim the free domain (GitHub Student Pack), add it to Cloudflare, and start Apple and Google developer enrollment (see [BUILD_PLAN.md Stage 0](../engineering/BUILD_PLAN.md#stage-0-accounts-company-and-domain))

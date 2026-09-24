@@ -5,8 +5,9 @@
 | | |
 |---|---|
 | Last updated | 2026-09-24 |
-| Build window | 12 weeks (Nov 2026 – Jan 2027) |
-| Companion docs | [PLAN.md](PLAN.md) · [RESEARCH.md](RESEARCH.md) · [MARKET.md](MARKET.md) |
+| Build window | 12 weeks (Nov 2026 – Jan 2027): website, iOS, and Android from one codebase |
+| Step-by-step plan | [BUILD_PLAN.md](../engineering/BUILD_PLAN.md) |
+| Companion docs | [PLAN.md](../business/PLAN.md) · [RESEARCH.md](../research/RESEARCH.md) · [MARKET.md](../business/MARKET.md) |
 
 ---
 
@@ -26,7 +27,7 @@ The MVP proves four things:
 
 **Tech events, hackathons, dev meetups, and university tech clubs in English-speaking markets.**
 
-Sponsors (SaaS, dev tools, cloud, fintech) have recurring budgets and dedicated dev-rel teams, deals close in weeks, and both sides are online. See [MARKET.md](MARKET.md#4-segments-and-beachhead). Categories are data, not code, so switching niche later is a config change.
+Sponsors (SaaS, dev tools, cloud, fintech) have recurring budgets and dedicated dev-rel teams, deals close in weeks, and both sides are online. See [MARKET.md](../business/MARKET.md#4-segments-and-beachhead). Categories are data, not code, so switching niche later is a config change.
 
 ## 3. Roles
 
@@ -42,7 +43,7 @@ Users pick one primary role at signup. Dual-role accounts come later (see §15).
 ## 4. Features in the MVP
 
 ### 4.1 Auth and onboarding
-- Sign up with email (magic link), Google, or **Sign in with LinkedIn**, which imports name, photo, and headline to cut onboarding time
+- Sign up with an email code (6 digits), Google, Apple, or **Sign in with LinkedIn**. LinkedIn imports name, photo, and headline to cut onboarding time. Apple sign-in is required on iOS when other social logins are offered.
 - Pick a role: **"I organize events"** or **"I sponsor events"**
 - Guided profile setup in 3 steps, under 3 minutes. The progress bar shows profile strength.
 - Optional: create or join an Organization (auto-suggested by email domain)
@@ -122,16 +123,18 @@ Opportunities come in two types. Both sides can post.
 
 ### 4.9 Notifications
 - In-app bell plus an email digest (daily, or instant for pitches and messages)
+- **Push notifications** on iOS and Android for new pitches, messages, and connection requests. The website uses in-app notifications and email.
 - Triggers: connection request or accept, new pitch, pitch status change, new message, comment or like, **new opportunity matching a saved search**, and "someone viewed your profile" (identity shown on Premium)
 
 ### 4.10 Who viewed
 - Free: count plus the last 3 viewers
 - Premium: full list for 90 days, including viewer company and role, for both profiles and opportunities
 
-### 4.11 Payments and plans (Stripe)
-- Stripe Checkout for subscriptions and one-off Boost purchases
+### 4.11 Payments and plans
+- **Website:** Stripe Checkout for subscriptions and one-off Boost purchases
 - Stripe Customer Portal for upgrade, downgrade, cancel, and invoices. We don't build a billing UI.
-- Webhooks update `subscriptions` and `boosts` tables
+- **iOS and Android apps:** App Store and Google Play purchases through RevenueCat, added before the public store launch. During beta, purchases happen on the website (D-017).
+- Stripe and RevenueCat webhooks both update the `subscriptions` and `boosts` tables, so Premium works on every platform, wherever it was bought
 
 ### 4.12 Trust and safety
 - Email verification is required before posting
@@ -155,7 +158,7 @@ Track these events (PostHog):
 
 | Feature | Why not now | Add when |
 |---|---|---|
-| Native iOS/Android apps | A responsive web app covers the MVP loop | After product-market fit signals (Phase 3) |
+| Web push notifications | In-app notifications and email cover the website. iOS and Android get push in the MVP. | Web users ask for it |
 | Maple Scout / Sponsor Suite team plans | Need individual usage first | ≥20 teams ask for shared pipelines |
 | Promoted Opportunities (CPC) and Ads | Need traffic first | ≥50K monthly active users |
 | AI Fit Score / recommendations | Rule-based matching is enough to learn | ≥1,000 pitches to train on |
@@ -247,27 +250,24 @@ Quick Pitches from Premium users sort to the top of the recipient's Pitches inbo
 | Boost credits / month | – | 1 | 1 |
 | Insights (views, pitch rates) | Basic | Full | Full |
 
-Annual pricing: $24/mo (Organizer) and $39/mo (Sponsor). Early beta users get founder pricing (see [PLAN.md](PLAN.md#phase-0-validate-oct-2026-4-weeks)).
+Annual pricing: $24/mo (Organizer) and $39/mo (Sponsor). Early beta users get founder pricing (see [PLAN.md](../business/PLAN.md#phase-0-validate-oct-2026-4-weeks)).
 
 ## 9. Tech stack
 
-Boring, managed, and cheap. The goal is to ship the loop, not to build infrastructure.
+The full tech plan (what each tool does, why we chose it, how we use it, free tiers, and costs) is in [TECH_STACK.md](../engineering/TECH_STACK.md). Summary:
 
-| Layer | Choice | Why |
-|---|---|---|
-| Web app | **Next.js (App Router) + TypeScript + Tailwind** | One codebase for SSR (SEO pages) and the app |
-| Database | **Supabase Postgres** | Relational data, Row Level Security, built-in auth |
-| Auth | **Supabase Auth**: email magic link, Google, LinkedIn (OIDC) | No custom auth code |
-| Search | **Postgres full-text + `pg_trgm`** | No extra service. Move to Typesense/Meilisearch at >1M docs or p95 >300ms |
-| Realtime messaging | **Supabase Realtime** | No websocket server to run |
-| File storage | **Supabase Storage** | Images, media kits |
-| Payments | **Stripe Billing + Checkout + Customer Portal** | No custom billing UI |
-| Email | **Resend** | Transactional email and digests |
-| Scheduled jobs | **Vercel Cron** | Alert emails, boost expiry, digest sends |
-| Analytics / errors | **PostHog / Sentry** | Free tiers |
-| Hosting | **Vercel** | Zero-ops |
+| Layer | Choice |
+|---|---|
+| Website + iOS + Android | One **Expo** (React Native + Expo Router) codebase, TypeScript, NativeWind |
+| Web hosting, DNS, email forwarding | **Cloudflare** (free) |
+| Database, auth, storage, realtime, server functions, cron | **Supabase** (Postgres + Row Level Security, Edge Functions) |
+| Search | **Postgres full-text + `pg_trgm`** (D-008) |
+| App builds, store uploads, instant updates | **Expo EAS** |
+| Payments | **Stripe** on the website, **RevenueCat** for App Store / Google Play purchases |
+| Email / push | **Resend** / **Expo Push** |
+| Analytics / errors | **PostHog** / **Sentry** |
 
-Expected infra cost during beta: **~$100–250/month**.
+Expected cost: **$0 during the build**, about **$25–70 a month from beta** ([TECH_STACK.md §7](../engineering/TECH_STACK.md#7-what-it-costs-stage-by-stage)).
 
 ## 10. Data model (core tables)
 
@@ -319,9 +319,11 @@ Row Level Security on every table: users can write only their own rows, and all 
 
 ## 12. Build timeline (12 weeks, 2-week sprints)
 
+The step-by-step version, with setup commands, app store steps, and beta, is in [BUILD_PLAN.md](../engineering/BUILD_PLAN.md).
+
 | Sprint | Weeks | Deliverables |
 |---|---|---|
-| **S1** | 1–2 | Repo, CI, Supabase project, design system basics, auth (email, Google, LinkedIn), role pick, onboarding, profiles, organizations + domain verification |
+| **S1** | 1–2 | Repo, CI, Supabase project, design system basics, auth (email code, Google, Apple, LinkedIn), role pick, onboarding, profiles, organizations + domain verification |
 | **S2** | 3–4 | Events (with URL import), Opportunities (packages + calls + tiers), posts, feed, likes and comments |
 | **S3** | 5–6 | Search (FTS + filters + organic ranking), follow and connect, suggestions panel, public SEO pages |
 | **S4** | 7–8 | Quick Pitch, Pitches inbox + statuses + deals, messaging (realtime), notifications (in-app + email) |
@@ -334,9 +336,9 @@ Row Level Security on every table: users can write only their own rows, and all 
 
 1. **Weeks −4 to 0 (Phase 0):** waitlist + "Maple Weekly" concierge newsletter + 40 interviews
 2. **Seed content:** founders onboard 100 tech events and hackathons personally, and post packages with their permission
-3. **Private beta (Feb 2027):** invite 150 organizers + 40 sponsors. Sponsors get Premium Sponsor free for 6 months.
+3. **Private beta (Feb 2027):** invite 150 organizers + 40 sponsors on the website, TestFlight (iOS), and Google Play closed testing. Sponsors get Premium Sponsor free for 6 months.
 4. **Weekly feedback loop:** 5 user calls a week, ship fixes every Friday
-5. **Public launch (Apr 2027):** Product Hunt, Show HN, dev-rel communities, a hackathon network partnership
+5. **Public launch (Apr 2027)** on the website, App Store, and Google Play: Product Hunt, Show HN, dev-rel communities, a hackathon network partnership
 
 ## 14. Success metrics (first 90 days after beta)
 
