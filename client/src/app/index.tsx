@@ -1,4 +1,5 @@
 import Head from 'expo-router/head';
+import { Link } from 'expo-router';
 import { Image, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '@/components/ui/Button';
@@ -34,6 +35,7 @@ export default function Index() {
             <Button label="Organizer" accessibilityHint="Foundation preview only; no navigation." />
             <Button label="Sponsor" variant="secondary" accessibilityHint="Foundation preview only; no navigation." />
           </View>
+          <Link href="/login" asChild><Button label="Sign in" variant="secondary" /></Link>
           <Card>
             <View className="items-center gap-xs">
               <Text className="text-sm font-semibold text-light-text dark:text-dark-text">Foundation Build</Text>
