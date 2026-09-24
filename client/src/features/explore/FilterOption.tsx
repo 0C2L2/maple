@@ -1,0 +1,3 @@
+import {Pressable,Text,View} from 'react-native';
+export type FilterOptionProps={label:string;group:string;selected:boolean;onPress:()=>void};
+export function FilterOption({label,group,selected,onPress}:FilterOptionProps){return <Pressable accessibilityRole="checkbox" accessibilityLabel={group+': '+label} accessibilityState={{checked:selected}} onPress={onPress} className="min-h-11 flex-row items-center gap-3 rounded-lg px-2"><View className={'h-[18px] w-[18px] items-center justify-center rounded border '+(selected?'border-brand bg-brand':'border-light-border dark:border-dark-border')}><Text className="text-xs text-on-brand">{selected?'✓':''}</Text></View><Text className="text-sm text-light-text dark:text-dark-text">{label}</Text></Pressable>;}

@@ -7,13 +7,13 @@ import {Button} from '@/components/ui/Button';
 import {AuthError} from '@/components/auth/AuthFrame';
 import {textStyle} from '@/features/profiles/ProfileFields';
 import {getPitchState,sendPitch} from './data';
-type Props={opportunityId:string;ownerOrgId:string;type:'package'|'call';published:boolean};
+type Props={opportunityId:string;ownerOrgId:string;type:'package'|'call';published:boolean;title?:string;organizationName?:string};
 export function QuickPitch(props:Props){
  const {profile}=useSession();
  if(!profile||!props.published||profile.role!==(props.type==='package'?'sponsor':'organizer'))return null;
  return <PitchForm key={props.opportunityId+profile.id} {...props} fromId={profile.id}/>;
 }
-function PitchForm({opportunityId,ownerOrgId,fromId}:Props&{fromId:string}){
+function PitchForm({opportunityId,ownerOrgId,fromId,title,organizationName}:Props&{fromId:string}){
  const [state,setState]=useState<{ownSide:boolean;sent:boolean}|null>(null);
  const [open,setOpen]=useState(false),[note,setNote]=useState(''),[error,setError]=useState<string|null>(null);
  const [busy,setBusy]=useState(false),[attempt,setAttempt]=useState(0),[duplicate,setDuplicate]=useState(false);
@@ -35,13 +35,14 @@ function PitchForm({opportunityId,ownerOrgId,fromId}:Props&{fromId:string}){
  if(!state)return <View className="gap-sm"><AuthError message={error}/>{error?<Button label="Retry pitch availability" onPress={()=>setAttempt(n=>n+1)}/>:<Text className={textStyle}>Checking pitch availability...</Text>}</View>;
  if(!open)return <Button label="Quick Pitch" onPress={()=>setOpen(true)}/>;
  const count=Array.from(note.trim()).length;
- return <View className="gap-md rounded-card border border-light-border p-md dark:border-dark-border">
+ return <View className="gap-md border-t border-light-border pt-lg dark:border-dark-border">
  <Text accessibilityRole="header" className="text-xl font-semibold text-light-text dark:text-dark-text">Quick Pitch</Text>
+ <Text className={textStyle}>{title}</Text>{organizationName?<Text className="text-sm text-light-muted dark:text-dark-muted">{organizationName}</Text>:null}
  <Text className={textStyle}>Optional note · maximum 300 characters</Text>
  <TextInput accessibilityLabel="Optional note" aria-describedby="pitch-note-count" value={note} onChangeText={setNote} multiline editable={!busy} className="min-h-28 rounded-button border border-light-border bg-light-surface p-md text-base text-light-text dark:border-dark-border dark:bg-dark-surface dark:text-dark-text"/>
  <Text nativeID="pitch-note-count" className={textStyle}>{count}/300 characters{count>300?' · Shorten your note to send.':''}</Text>
  <AuthError message={error}/>
- <Button label={busy?'Sending...':'Send pitch'} disabled={busy||count>300} onPress={()=>void submit()}/>
- <Button label="Cancel" variant="secondary" disabled={busy} onPress={()=>{setOpen(false);setNote('');setError(null);}}/>
+ <Button size="small" accessibilityLabel="Send pitch" label={busy?'Sending...':'Send Quick Pitch'} disabled={busy||count>300} onPress={()=>void submit()}/>
+ <Button size="small" label="Cancel" variant="secondary" disabled={busy} onPress={()=>{setOpen(false);setNote('');setError(null);}}/>
  </View>;
 }

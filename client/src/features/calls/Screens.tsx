@@ -1,3 +1,5 @@
+import {DetailLayout,Section,Identity,Chips,Badge,mutedText} from '@/components/marketplace/Marketplace';
+import {orgTypes} from '@/features/organizations/validation';
 import {QuickPitch} from '@/features/pitches/QuickPitch';
 import {useCallback,useState} from 'react';
 import {Link,router,useFocusEffect,useLocalSearchParams} from 'expo-router';
@@ -39,12 +41,13 @@ function Content({mode}:{mode:'new'|'view'|'edit'}){
  if(mode!=='view')return <AuthFrame title={mode==='new'?'Create Call for Events':'Edit Call'}><CallForm key={call?.id||org.id} orgId={org.id} initial={mode==='edit'?call:undefined} onSaved={slug=>router.replace({pathname:route,params:{slug:org.slug,opportunitySlug:slug}})}/></AuthFrame>;
  const item=call!;
  async function changeStatus(){if(busy)return;setBusy(true);setFailure(null);try{await publishCall(item.id,item.status==='draft');retry();}catch(e){setFailure(e instanceof Error?e.message:'Unable to publish Call.');}finally{setBusy(false);}}
- return <AuthFrame title={item.title}><Head><title>{item.title} · {org.name} · Maple</title></Head>
- <Link className={textStyle} href={{pathname:'/org/[slug]',params:{slug:org.slug}}}>{org.name}</Link>
- <Text className={textStyle}>{item.status==='draft'?'Draft - visible only to Sponsor admins of this organization.':'Published'}</Text>
- <Text className={textStyle}>{item.description}</Text>
- {item.opportunity_call_details?( ['target_categories','target_regions','target_audience_types','target_attendance_bands','gives'] as const).map(key=><Text key={key} className={textStyle}>{key.replaceAll('_',' ')}: {item.opportunity_call_details![key].map(preferenceLabel).join(', ')||'Not specified'}</Text>):null}
- <QuickPitch opportunityId={item.id} ownerOrgId={item.owner_org_id} type="call" published={item.status==='published'}/>
- {canManage?<><Link href={{pathname:'/org/[slug]/calls/[opportunitySlug]/edit',params:{slug:org.slug,opportunitySlug:item.slug}}} asChild><Button label="Edit Call"/></Link><Button label={busy?'Saving...':item.status==='draft'?'Publish Call':'Unpublish Call'} disabled={busy} onPress={()=>void changeStatus()}/></>:null}
- <AuthError message={failure}/></AuthFrame>;
+ return <DetailLayout title={item.title} badge="SPONSOR CALL" subtitle={<><Text className={textStyle}>{org.name}</Text>{item.status==='draft'?<Text className={mutedText}>Draft · visible only to Sponsor admins of this organization</Text>:null}</>} sidebar={<>
+ <Identity name={org.name} subtitle={orgTypes[org.type]}/>{org.verified?<Badge>Verified organization</Badge>:null}<Link className={textStyle} href={{pathname:'/org/[slug]',params:{slug:org.slug}}}>View organization →</Link>
+ <QuickPitch opportunityId={item.id} ownerOrgId={item.owner_org_id} type="call" title={item.title} organizationName={org.name} published={item.status==='published'}/>
+ {canManage?<><Link href={{pathname:'/org/[slug]/calls/[opportunitySlug]/edit',params:{slug:org.slug,opportunitySlug:item.slug}}} asChild><Button size="small" variant="secondary" label="Edit Call"/></Link><Button size="small" label={busy?'Saving...':item.status==='draft'?'Publish Call':'Unpublish Call'} disabled={busy} onPress={()=>void changeStatus()}/></>:null}<AuthError message={failure}/>
+ </>}>
+ <Head><title>{item.title} · {org.name} · Maple</title></Head>
+ <Section title="About this partnership"><Text className={textStyle}>{item.description}</Text></Section>
+ {item.opportunity_call_details?<><Section title="Looking for">{(['target_categories','target_regions','target_audience_types','target_attendance_bands'] as const).map((key,i)=><View key={key} className="gap-sm"><Text className={mutedText}>{['Categories','Regions','Audience','Attendance'][i]}</Text>{item.opportunity_call_details![key].length?<Chips values={item.opportunity_call_details![key].map(value=>preferenceLabel(value)+(key==='target_attendance_bands'?' attendees':''))}/>:<Text className={mutedText}>Not specified</Text>}</View>)}</Section>{item.opportunity_call_details.gives.length?<Section title="Sponsorship support"><Chips values={item.opportunity_call_details.gives.map(preferenceLabel)}/></Section>:null}</>:null}
+ </DetailLayout>;
 }
