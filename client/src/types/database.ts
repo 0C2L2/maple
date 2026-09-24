@@ -9,6 +9,90 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      events: {
+        Row: {
+          attendance_band: string
+          audience_types: string[]
+          categories: string[]
+          city: string | null
+          country: string | null
+          created_at: string
+          created_by: string
+          description: string | null
+          ends_at: string
+          format: Database["public"]["Enums"]["event_format"]
+          id: string
+          org_id: string
+          slug: string
+          starts_at: string
+          status: Database["public"]["Enums"]["event_status"]
+          timezone: string
+          title: string
+          updated_at: string
+          venue_name: string | null
+          website: string | null
+        }
+        Insert: {
+          attendance_band: string
+          audience_types: string[]
+          categories: string[]
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          ends_at: string
+          format: Database["public"]["Enums"]["event_format"]
+          id?: string
+          org_id: string
+          slug: string
+          starts_at: string
+          status?: Database["public"]["Enums"]["event_status"]
+          timezone: string
+          title: string
+          updated_at?: string
+          venue_name?: string | null
+          website?: string | null
+        }
+        Update: {
+          attendance_band?: string
+          audience_types?: string[]
+          categories?: string[]
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          ends_at?: string
+          format?: Database["public"]["Enums"]["event_format"]
+          id?: string
+          org_id?: string
+          slug?: string
+          starts_at?: string
+          status?: Database["public"]["Enums"]["event_status"]
+          timezone?: string
+          title?: string
+          updated_at?: string
+          venue_name?: string | null
+          website?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "events_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "events_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organization_members: {
         Row: {
           created_at: string
@@ -187,6 +271,8 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
+      event_format: "in_person" | "online" | "hybrid"
+      event_status: "draft" | "published"
       organization_member_role: "admin" | "member"
       organization_type:
         | "event_company"
@@ -321,6 +407,8 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      event_format: ["in_person", "online", "hybrid"],
+      event_status: ["draft", "published"],
       organization_member_role: ["admin", "member"],
       organization_type: [
         "event_company",

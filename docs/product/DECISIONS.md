@@ -32,6 +32,7 @@
 | D-017 | Payments: Stripe on the web first, in-app purchases via RevenueCat before store launch | Accepted | 2026-09-24 |
 | D-018 | Repo layout: `docs/`, `client/`, `supabase/` | Accepted | 2026-09-24 |
 | D-019 | Foundation-only client work before the validation gate | Accepted | 2026-09-24 |
+| D-020 | Checkpoint 6 event foundation schema | Accepted | 2026-09-24 |
 
 ---
 
@@ -186,3 +187,8 @@
 | Domain | Depends on the name check | Before the landing page |
 | Founder roles and equity split | Write it down early | Before Phase 1 |
 | Beta region (which English-speaking market first) | Pick where the founders' network is strongest | Week 1 of Phase 0 |
+
+## D-020: Checkpoint 6 event foundation schema
+- **Status:** Accepted · 2026-09-24
+- **Decision:** Events require an organization (`org_id`); its Organizer admins manage them. `created_by` replaces `owner_id` as immutable provenance, `title` replaces `name`, `website` replaces `url`, and `format` (in_person / online / hybrid) replaces `online`. Add an immutable unique `slug` for /events/[slug]. Keep `attendance_band` using the CP4 audience_band vocabulary; use canonical categories[] and audience_types[]. Status is draft/published. Store timestamptz start/end plus a PostgreSQL-validated IANA timezone.
+- **Consequences:** This scoped checkpoint overrides MVP sections 4.3, 10 and 11 where they describe optional organizations, historical field names/statuses, and ID routes. Organization and creator deletion use RESTRICT. Packages, calls, import, search and production static event prerendering remain deferred. No broader MVP authorization is implied.

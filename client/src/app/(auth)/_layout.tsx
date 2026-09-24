@@ -12,6 +12,7 @@ export default function AuthLayout() {
   return <Stack screenOptions={{ headerShown: false, animation: 'none' }}>
     <Stack.Protected guard={!session}><Stack.Screen name="login" /></Stack.Protected>
     <Stack.Protected guard={!!session && !profile}><Stack.Screen name="onboarding" /></Stack.Protected>
-    <Stack.Protected guard={!!session && !!profile}><Stack.Screen name="me/index" /><Stack.Screen name="me/edit" /><Stack.Screen name="org" /></Stack.Protected>
+    <Stack.Protected guard={!!session && !!profile}><Stack.Screen name="me/index" /><Stack.Screen name="me/edit" /></Stack.Protected>
+    <Stack.Screen name="org" />
   </Stack>;
 }

@@ -1,3 +1,4 @@
+import { RequireProfile } from '@/components/auth/RequireProfile';
 import { Link, router } from 'expo-router';
 import { Text } from 'react-native';
 import { AuthError, AuthFrame } from '@/components/auth/AuthFrame';
@@ -5,7 +6,7 @@ import { Button } from '@/components/ui/Button';
 import { OrganizationForm } from '@/features/organizations/OrganizationForm';
 import { useOrganization } from '@/features/organizations/OrganizationContext';
 import { updateOrganization } from '@/features/organizations/data';
-export default function EditOrganization() {
+function EditOrganization() {
   const { organization: org, membership, loading, error, retry, setOrganization } = useOrganization();
   if (loading) return <AuthFrame title="Loading organization" />;
   if (error) return <AuthFrame title="Unable to load organization"><AuthError message={error} /><Button label="Retry" onPress={retry} /></AuthFrame>;
@@ -16,3 +17,5 @@ export default function EditOrganization() {
     <Link href={{ pathname: '/org/[slug]', params: { slug: org.slug } }} asChild><Button label="Cancel" variant="secondary" /></Link>
   </AuthFrame>;
 }
+
+export default function ProtectedEditOrganization() { return <RequireProfile><EditOrganization /></RequireProfile>; }

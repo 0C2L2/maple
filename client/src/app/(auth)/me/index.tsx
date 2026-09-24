@@ -23,6 +23,7 @@ export default function Me() {
     <Text accessibilityLabel={`Profile completeness ${profile.completeness} percent`} className={textStyle}>Profile completeness: {profile.completeness}%</Text>
     <Link href="/me/edit" asChild><Button label="Edit profile" /></Link>
     <MyOrganizations />
+    {profile.role === "organizer" ? <Link href="/events/new" asChild><Button label="Create event" variant="secondary" /></Link> : null}
     <AuthError message={error} />
     <Button label={busy ? 'Signing out…' : 'Sign out'} variant="secondary" disabled={busy} onPress={() => { setBusy(true); void signOut().catch(() => setError('Could not sign out. Please retry.')).finally(() => setBusy(false)); }} />
   </AuthFrame>;

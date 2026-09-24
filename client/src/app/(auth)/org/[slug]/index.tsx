@@ -1,3 +1,5 @@
+import { OrganizationEvents } from '@/features/events/OrganizationEvents';
+import { useSession } from '@/providers/SessionProvider';
 import { Link } from 'expo-router';
 import Head from 'expo-router/head';
 import { Text } from 'react-native';
@@ -7,6 +9,7 @@ import { textStyle } from '@/features/profiles/ProfileFields';
 import { useOrganization } from '@/features/organizations/OrganizationContext';
 import { orgTypes, safeWebsite } from '@/features/organizations/validation';
 export default function OrganizationPage() {
+  const { profile, session } = useSession();
   const { organization: org, membership, loading, error, retry } = useOrganization();
   if (loading) return <AuthFrame title="Loading organization"><Text className={textStyle}>One moment…</Text></AuthFrame>;
   if (error) return <AuthFrame title="Unable to load organization"><AuthError message={error} /><Button label="Retry" onPress={retry} /></AuthFrame>;
@@ -23,6 +26,7 @@ export default function OrganizationPage() {
     <Text className={textStyle}>{org.about || 'No description added yet.'}</Text>
     {membership ? <Text className={textStyle}>Your membership: {membership.role === 'admin' ? 'Admin' : 'Member'}</Text> : null}
     {membership?.role === 'admin' ? <Link href={{ pathname: '/org/[slug]/edit', params: { slug: org.slug } }} asChild><Button label="Edit organization" /></Link> : null}
+    <OrganizationEvents key={org.id + (session?.user.id || "anonymous")} orgId={org.id} canManage={profile?.role === "organizer" && membership?.role === "admin"} />
     <Link href="/me" asChild><Button label="Back to profile" variant="secondary" /></Link>
   </AuthFrame>;
 }
