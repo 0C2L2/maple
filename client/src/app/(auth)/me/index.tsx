@@ -1,3 +1,4 @@
+import { MyOrganizations } from '@/features/organizations/MyOrganizations';
 import { useState } from 'react';
 import { Link } from 'expo-router';
 import { Image, Text, View } from 'react-native';
@@ -21,6 +22,7 @@ export default function Me() {
     <PreferenceSummary profile={profile} />
     <Text accessibilityLabel={`Profile completeness ${profile.completeness} percent`} className={textStyle}>Profile completeness: {profile.completeness}%</Text>
     <Link href="/me/edit" asChild><Button label="Edit profile" /></Link>
+    <MyOrganizations />
     <AuthError message={error} />
     <Button label={busy ? 'Signing out…' : 'Sign out'} variant="secondary" disabled={busy} onPress={() => { setBusy(true); void signOut().catch(() => setError('Could not sign out. Please retry.')).finally(() => setBusy(false)); }} />
   </AuthFrame>;
