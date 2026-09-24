@@ -44,8 +44,8 @@ select throws_ok($$insert into public.profiles (id,role,handle,name,completeness
  '42501', null, 'completeness insert rejected');
 select throws_ok($$update public.profiles set created_at='2000-01-01' where id=auth.uid()$$,
  '42501', null, 'profile timestamps cannot be forged');
-select is((select completeness::integer from public.profiles where id=auth.uid()), 0,
- 'protected completeness remains its default');
+select is((select completeness::integer from public.profiles where id=auth.uid()), 55,
+ 'protected completeness retains its computed score after rejected tampering');
 select is((select role::text from public.profiles where id=auth.uid()), 'organizer',
  'protected role remains unchanged');
 select throws_ok($$update public.profiles set handle='UpperCase' where id=auth.uid()$$,

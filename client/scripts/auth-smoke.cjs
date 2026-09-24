@@ -66,7 +66,7 @@ function tokenFrom(message, heading) {
     const runtimeErrors = [];
     page.on('pageerror', () => runtimeErrors.push('runtime error'));
     const email = 'maple-checkpoint3-' + Date.now() + '@example.test';
-    await page.goto('http://127.0.0.1:8766/account-ready');
+    await page.goto('http://127.0.0.1:8766/onboarding');
     await page.getByRole('button', { name: 'Continue', exact: true }).waitFor();
     assert(new URL(page.url()).pathname === '/login');
     pass('unauthenticated protected route returns to login');
@@ -114,13 +114,13 @@ function tokenFrom(message, heading) {
     await codeInput.fill(firstToken);
     await page.getByRole('button', { name: 'Verify', exact: true }).click();
     await page.getByRole('button', { name: 'Sign out', exact: true }).waitFor();
-    assert(new URL(page.url()).pathname === '/account-ready');
+    assert(new URL(page.url()).pathname === '/onboarding');
     pass('actual confirmation OTP creates session');
-    await captureMatrix(page, 'account-ready');
+    await captureMatrix(page, 'onboarding');
     await page.goto('http://127.0.0.1:8766/login');
     await page.getByRole('button', { name: 'Sign out', exact: true }).waitFor();
-    assert(new URL(page.url()).pathname === '/account-ready');
-    pass('authenticated login redirects to account-ready');
+    assert(new URL(page.url()).pathname === '/onboarding');
+    pass('authenticated login redirects to onboarding');
     await page.reload();
     await page.getByRole('button', { name: 'Sign out', exact: true }).waitFor();
     pass('web reload restores session');
@@ -128,7 +128,7 @@ function tokenFrom(message, heading) {
     await page.getByRole('button', { name: 'Continue', exact: true }).waitFor();
     assert.equal(await page.evaluate(() => Object.keys(localStorage).some(k => k.endsWith('-auth-token'))), false);
     pass('sign out clears persisted session and returns to login');
-    await page.goto('http://127.0.0.1:8766/account-ready');
+    await page.goto('http://127.0.0.1:8766/onboarding');
     await page.getByRole('button', { name: 'Continue', exact: true }).waitFor();
     pass('signed-out protected route remains unavailable');
     await page.getByRole('textbox', { name: 'Email address' }).fill(email);

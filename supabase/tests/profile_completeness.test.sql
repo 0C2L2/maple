@@ -1,0 +1,40 @@
+begin;
+create extension if not exists pgtap with schema extensions;
+set local search_path = public, extensions;
+select no_plan();
+-- Only fixture Auth users are created as postgres.
+insert into auth.users(id,email) values
+ ('44444444-4444-4444-8444-444444444444','completeness-organizer@example.test'),
+ ('55555555-5555-4555-8555-555555555555','completeness-sponsor@example.test');
+set local role authenticated;
+set local request.jwt.claims='{"sub":"44444444-4444-4444-8444-444444444444","role":"authenticated"}';
+select is(current_user::text,'authenticated','completeness assertions use authenticated role');
+select lives_ok($$insert into public.profiles(id,role,name,handle) values(auth.uid(),'organizer','Organizer','complete-organizer')$$,'insert works with existing column grants');
+select is((select completeness::int from public.profiles where id=auth.uid()),40,'base profile score is 40');
+select lives_ok($$update public.profiles set headline='Headline', bio='About', location='Seoul', categories=array['hackathon'],regions=array['asia'],audience_types=array['developers'],audience_band='50-199' where id=auth.uid()$$,'normal fields update under column grants');
+select is((select completeness::int from public.profiles where id=auth.uid()),100,'complete organizer scores 100');
+select lives_ok($$update public.profiles set bio='   ', audience_band=null where id=auth.uid()$$,'removing normal fields succeeds');
+select is((select completeness::int from public.profiles where id=auth.uid()),85,'score decreases and ignores whitespace');
+select throws_ok($$update public.profiles set completeness=100 where id=auth.uid()$$,'42501',null,'normal client cannot set completeness');
+select throws_ok($$update public.profiles set role='sponsor' where id=auth.uid()$$,'42501',null,'role remains immutable for clients');
+select is((select role::text from public.profiles where id=auth.uid()),'organizer','organizer role unchanged');
+select lives_ok($$update public.profiles set name=name where id=auth.uid()$$,'same inputs may be updated');
+select is((select completeness::int from public.profiles where id=auth.uid()),85,'score deterministic');
+set local request.jwt.claims='{"sub":"55555555-5555-4555-8555-555555555555","role":"authenticated"}';
+select throws_ok($$insert into public.profiles(id,role,name,handle,completeness) values(auth.uid(),'sponsor','Sponsor','complete-sponsor',100)$$,'42501',null,'client supplied completeness insert rejected');
+select lives_ok($$insert into public.profiles(id,role,name,handle,headline,bio,location,categories,regions,audience_types,gives) values(auth.uid(),'sponsor','Sponsor','complete-sponsor','Headline','About','Seoul',array['conference'],array['asia'],array['students'],array['credits'])$$,'sponsor inserts normal fields only');
+select is((select completeness::int from public.profiles where id=auth.uid()),100,'sponsor score uses gives, not attendance');
+select lives_ok($$update public.profiles set gives='{}',audience_band='50-199' where id=auth.uid()$$,'sponsor preference fixture changes');
+select is((select completeness::int from public.profiles where id=auth.uid()),95,'sponsor attendance does not replace gives');
+select lives_ok($$update public.profiles set categories=array[' '],regions=array[''] where id=auth.uid()$$,'blank taxonomy entries fixture');
+select is((select completeness::int from public.profiles where id=auth.uid()),75,'blank arrays earn no score');
+reset role;
+set local role service_role;
+select lives_ok($$update public.profiles set completeness=1 where id='55555555-5555-4555-8555-555555555555'$$,'backend supplied completeness is overwritten');
+select is((select completeness::int from public.profiles where id='55555555-5555-4555-8555-555555555555'),75,'trigger authoritative even for backend writes');
+reset role;
+select ok(not has_column_privilege('authenticated','public.profiles','completeness','INSERT') and not has_column_privilege('authenticated','public.profiles','completeness','UPDATE'),'protected grants unchanged');
+select ok(not has_function_privilege('authenticated','private.calculate_profile_completeness()','EXECUTE'),'trigger function not exposed to clients');
+select is((select count(*) from pg_trigger where tgrelid='public.profiles'::regclass and tgname='profiles_completeness'),1::bigint,'exactly one authoritative completeness trigger');
+select * from finish();
+rollback;
