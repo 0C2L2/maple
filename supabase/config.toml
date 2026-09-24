@@ -428,3 +428,31 @@ enabled = true
 # formatted with uppercase keywords, indent 2, max width 180, trailing commas,
 # and column/key alignment. Set to "null" to emit raw, unformatted SQL.
 # format_options = "{\"keywordCase\":\"upper\",\"indent\":2,\"maxWidth\":180,\"commaStyle\":\"trailing\"}"
+
+# Production (mapleapp.tech, Seoul). `npx supabase config push --project-ref zyughaeypmgrxpsabonr` applies the
+# settings above with these overrides. Secrets come from the shell at push time (env(...)), never from this file:
+#   RESEND_API_KEY=… npx supabase config push --project-ref zyughaeypmgrxpsabonr
+[remotes.production]
+project_id = "zyughaeypmgrxpsabonr"
+
+[remotes.production.auth]
+site_url = "https://mapleapp.tech"
+additional_redirect_urls = ["https://mapleapp.tech"]
+
+# The local file's 2 emails/hour would stall sign-ups.
+[remotes.production.auth.rate_limit]
+email_sent = 100
+
+# Off until the real Turnstile keys exist (then: enabled = true, secret = "env(TURNSTILE_SECRET_KEY)").
+[remotes.production.auth.captcha]
+enabled = false
+
+# Sign-up and reset codes go out through Resend from the verified mapleapp.tech domain.
+[remotes.production.auth.email.smtp]
+enabled = true
+host = "smtp.resend.com"
+port = 465
+user = "resend"
+pass = "env(RESEND_API_KEY)"
+admin_email = "no-reply@mapleapp.tech"
+sender_name = "Maple"
