@@ -93,6 +93,110 @@ export type Database = {
           },
         ]
       }
+      opportunities: {
+        Row: {
+          created_at: string
+          created_by: string
+          description: string | null
+          event_id: string | null
+          id: string
+          slug: string
+          status: Database["public"]["Enums"]["opportunity_status"]
+          title: string
+          type: Database["public"]["Enums"]["opportunity_type"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          event_id?: string | null
+          id?: string
+          slug: string
+          status?: Database["public"]["Enums"]["opportunity_status"]
+          title: string
+          type?: Database["public"]["Enums"]["opportunity_type"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          event_id?: string | null
+          id?: string
+          slug?: string
+          status?: Database["public"]["Enums"]["opportunity_status"]
+          title?: string
+          type?: Database["public"]["Enums"]["opportunity_type"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "opportunities_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "opportunities_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      opportunity_tiers: {
+        Row: {
+          benefits: string[]
+          created_at: string
+          currency: string | null
+          id: string
+          in_kind: boolean
+          name: string
+          opportunity_id: string
+          price_minor: number | null
+          slots: number | null
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          benefits: string[]
+          created_at?: string
+          currency?: string | null
+          id?: string
+          in_kind?: boolean
+          name: string
+          opportunity_id: string
+          price_minor?: number | null
+          slots?: number | null
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          benefits?: string[]
+          created_at?: string
+          currency?: string | null
+          id?: string
+          in_kind?: boolean
+          name?: string
+          opportunity_id?: string
+          price_minor?: number | null
+          slots?: number | null
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "opportunity_tiers_opportunity_id_fkey"
+            columns: ["opportunity_id"]
+            isOneToOne: false
+            referencedRelation: "opportunities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organization_members: {
         Row: {
           created_at: string
@@ -268,11 +372,65 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      create_package_opportunity: {
+        Args: {
+          p_description: string
+          p_event_id: string
+          p_slug: string
+          p_tiers: Json
+          p_title: string
+        }
+        Returns: {
+          created_at: string
+          created_by: string
+          description: string | null
+          event_id: string | null
+          id: string
+          slug: string
+          status: Database["public"]["Enums"]["opportunity_status"]
+          title: string
+          type: Database["public"]["Enums"]["opportunity_type"]
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "opportunities"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      update_package_opportunity: {
+        Args: {
+          p_description: string
+          p_id: string
+          p_tiers: Json
+          p_title: string
+        }
+        Returns: {
+          created_at: string
+          created_by: string
+          description: string | null
+          event_id: string | null
+          id: string
+          slug: string
+          status: Database["public"]["Enums"]["opportunity_status"]
+          title: string
+          type: Database["public"]["Enums"]["opportunity_type"]
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "opportunities"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
     }
     Enums: {
       event_format: "in_person" | "online" | "hybrid"
       event_status: "draft" | "published"
+      opportunity_status: "draft" | "published"
+      opportunity_type: "package" | "call"
       organization_member_role: "admin" | "member"
       organization_type:
         | "event_company"
@@ -409,6 +567,8 @@ export const Constants = {
     Enums: {
       event_format: ["in_person", "online", "hybrid"],
       event_status: ["draft", "published"],
+      opportunity_status: ["draft", "published"],
+      opportunity_type: ["package", "call"],
       organization_member_role: ["admin", "member"],
       organization_type: [
         "event_company",

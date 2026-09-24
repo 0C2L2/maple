@@ -1,3 +1,4 @@
+import { EventOpportunities } from '@/features/opportunities/Screens';
 import { useRef, useState } from 'react';
 import { Link } from 'expo-router';
 import Head from 'expo-router/head';
@@ -45,6 +46,6 @@ export default function EventPage() {
       <Link href={{ pathname: '/events/[slug]/edit', params: { slug: event.slug } }} asChild><Button label="Edit event" disabled={busy} /></Link>
       <Button label={busy ? 'Saving…' : event.status === 'draft' ? 'Publish event' : 'Unpublish event'} disabled={busy} onPress={() => void changeStatus()} />
     </> : null}
-    <AuthError message={failure} />
+    <AuthError message={failure} /><EventOpportunities />
   </AuthFrame>;
 }
