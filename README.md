@@ -12,12 +12,12 @@
 
 ## What Maple is
 
-Every account is an organization (an event organizer or a sponsoring company) with a page, and organizations follow each other and post in a feed, just like companies on LinkedIn. The difference is that every post and listing says **what you give** or **what you're looking for**:
+Every account is an organization (an event organizer or a sponsoring company) with a page, and organizations follow each other and post in a feed, just like companies on Freelancer platforms. The difference is that every post and listing says **what you give** or **what you're looking for**:
 
 - **Organizers** post *Sponsorship Packages*, like "Gold tier, $5K, keynote slot + booth at our 1,500-person dev conference".
 - **Sponsors** post *Calls for Events*, like "$1–5K each for 5 student hackathons this spring".
 - Both sides search each other with structured filters (audience, budget, region, category), pitch in one click, and message.
-- Monetization mirrors LinkedIn (Premium, a Sales Navigator-style tool, a Recruiter-style tool, promoted listings, ads) plus **Boost**, which is paid, clearly labeled priority in search.
+- Monetization mirrors subscription based platforms (Premium, a Sales Navigator-style tool, a Sponsor-style tool, promoted listings, ads) plus **Boost**, which is paid, clearly labeled priority in search.
 
 ## Project structure
 
@@ -26,7 +26,6 @@ Planning docs and code are kept apart.
 ```
 maple/
 ├── README.md             ← you are here
-├── CLAUDE.md             ← rules for AI coding assistants
 ├── docs/                 ← planning docs only, no code
 │   ├── business/         ← PLAN.md, MARKET.md
 │   ├── research/         ← RESEARCH.md, VALIDATION.md
@@ -45,7 +44,7 @@ maple/
 
 | Doc | What it covers | Read it when |
 |---|---|---|
-| [PLAN.md](docs/business/PLAN.md) | Vision, LinkedIn → Maple mapping, roadmap, team, budget, KPIs, risks | You want the big picture |
+| [PLAN.md](docs/business/PLAN.md) | Vision, Platform → Maple mapping, roadmap, team, budget, KPIs, risks | You want the big picture |
 | [RESEARCH.md](docs/research/RESEARCH.md) | Problem evidence, personas, hypotheses, competitor comparison, interview scripts | You're doing user research or questioning the idea |
 | [MARKET.md](docs/business/MARKET.md) | Market size, competitors, pricing, revenue projections, go-to-market | You're pitching, pricing, or planning growth |
 | [MVP.md](docs/product/MVP.md) | The full MVP spec: features, flows, search and Boost rules, data model, screens, 12-week build plan | You're designing or building |
@@ -57,7 +56,6 @@ maple/
 | [DESIGN_SYSTEM.md](docs/product/DESIGN_SYSTEM.md) | Colors, type, spacing, components, layout, states, accessibility | Before building any screen |
 | [OWNERSHIP.md](docs/engineering/OWNERSHIP.md) | Who owns which feature and folder, shared areas, working rules | Before splitting work between developers |
 | [SHARED_CONTRACTS.md](docs/engineering/SHARED_CONTRACTS.md) | Enum values, table additions, function signatures, buckets, cross-feature components | Before writing code that another feature uses |
-| [CLAUDE.md](CLAUDE.md) | Project rules for AI coding assistants | Automatically, by Claude Code |
 
 **First read:** README → PLAN → VALIDATION. Read MVP before any build work.
 
