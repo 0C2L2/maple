@@ -93,6 +93,45 @@ export type Database = {
           },
         ]
       }
+      messages: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          sender_id: string
+          thread_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          sender_id?: string
+          thread_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          sender_id?: string
+          thread_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_sender_id_fkey"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "threads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       opportunities: {
         Row: {
           created_at: string
@@ -468,6 +507,101 @@ export type Database = {
         }
         Relationships: []
       }
+      thread_participants: {
+        Row: {
+          created_at: string
+          profile_id: string
+          side: string
+          thread_id: string
+        }
+        Insert: {
+          created_at?: string
+          profile_id: string
+          side: string
+          thread_id: string
+        }
+        Update: {
+          created_at?: string
+          profile_id?: string
+          side?: string
+          thread_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "thread_participants_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "thread_participants_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "threads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      threads: {
+        Row: {
+          created_at: string
+          from_id: string
+          id: string
+          matched_at: string | null
+          opportunity_id: string
+          owner_id: string
+          pitch_id: string
+        }
+        Insert: {
+          created_at?: string
+          from_id: string
+          id?: string
+          matched_at?: string | null
+          opportunity_id: string
+          owner_id: string
+          pitch_id: string
+        }
+        Update: {
+          created_at?: string
+          from_id?: string
+          id?: string
+          matched_at?: string | null
+          opportunity_id?: string
+          owner_id?: string
+          pitch_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "threads_from_id_fkey"
+            columns: ["from_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "threads_opportunity_id_fkey"
+            columns: ["opportunity_id"]
+            isOneToOne: false
+            referencedRelation: "opportunities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "threads_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "threads_pitch_id_fkey"
+            columns: ["pitch_id"]
+            isOneToOne: true
+            referencedRelation: "pitches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -548,6 +682,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      get_or_create_thread: { Args: { p_pitch_id: string }; Returns: string }
       list_public_opportunities: {
         Args: {
           p_attendance_bands?: string[]

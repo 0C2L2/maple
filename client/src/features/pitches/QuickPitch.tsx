@@ -1,5 +1,6 @@
+import {openConversation} from '@/features/messages/data';
 import {useCallback,useRef,useState} from 'react';
-import {useFocusEffect} from 'expo-router';
+import {router,useFocusEffect} from 'expo-router';
 import {Text,TextInput,View} from 'react-native';
 import {useSession} from '@/providers/SessionProvider';
 import {Button} from '@/components/ui/Button';
@@ -30,7 +31,7 @@ function PitchForm({opportunityId,ownerOrgId,fromId}:Props&{fromId:string}){
  finally{lock.current=false;setBusy(false);}
  }
  if(state?.ownSide)return null;
- if(state?.sent)return <Text accessibilityLiveRegion="polite" className={textStyle}>{duplicate?'You already sent a pitch for this opportunity.':'Pitch sent'}</Text>;
+ if(state?.sent)return <View className="gap-sm"><Text accessibilityLiveRegion="polite" className={textStyle}>{duplicate?'You already sent a pitch for this opportunity.':'Pitch sent'}</Text><AuthError message={error}/><Button label={busy?'Opening...':'Open conversation'} disabled={busy} onPress={()=>{if(lock.current)return;lock.current=true;setBusy(true);setError(null);void openConversation(opportunityId,fromId).then(id=>router.push({pathname:'/messages/[threadId]',params:{threadId:id}})).catch(()=>setError('Unable to open the conversation. Please retry.')).finally(()=>{lock.current=false;setBusy(false);});}}/></View>;
  if(!state)return <View className="gap-sm"><AuthError message={error}/>{error?<Button label="Retry pitch availability" onPress={()=>setAttempt(n=>n+1)}/>:<Text className={textStyle}>Checking pitch availability...</Text>}</View>;
  if(!open)return <Button label="Quick Pitch" onPress={()=>setOpen(true)}/>;
  const count=Array.from(note.trim()).length;
