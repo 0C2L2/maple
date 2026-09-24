@@ -22,7 +22,7 @@ export default function Me() {
     <PreferenceSummary profile={profile} />
     <Text accessibilityLabel={`Profile completeness ${profile.completeness} percent`} className={textStyle}>Profile completeness: {profile.completeness}%</Text>
     <Link href="/me/edit" asChild><Button label="Edit profile" /></Link>
-    <MyOrganizations />{profile.role === "sponsor" ? <Text className={textStyle}>To create a Call for Events, open an organization you administer. If you have none, create an organization first.</Text> : null}
+    <Link href="/explore" asChild><Button label="Explore opportunities" variant="secondary" /></Link><MyOrganizations />{profile.role === "sponsor" ? <Text className={textStyle}>To create a Call for Events, open an organization you administer. If you have none, create an organization first.</Text> : null}
     {profile.role === "organizer" ? <Link href="/events/new" asChild><Button label="Create event" variant="secondary" /></Link> : null}
     <AuthError message={error} />
     <Button label={busy ? 'Signing out…' : 'Sign out'} variant="secondary" disabled={busy} onPress={() => { setBusy(true); void signOut().catch(() => setError('Could not sign out. Please retry.')).finally(() => setBusy(false)); }} />

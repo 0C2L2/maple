@@ -1,0 +1,70 @@
+begin;
+create extension if not exists pgtap with schema extensions;
+set local search_path=public,extensions;
+select no_plan();
+insert into auth.users(id,email) values('11111111-1111-4111-8111-111111111111','explore-o@test.local'),('22222222-2222-4222-8222-222222222222','explore-s@test.local');
+insert into public.profiles(id,role,name,handle) values('11111111-1111-4111-8111-111111111111','organizer','Organizer','explore-o'),('22222222-2222-4222-8222-222222222222','sponsor','Sponsor','explore-s');
+insert into public.organizations(id,name,slug,type,created_by) values('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','Organizer','explore-org','event_company','11111111-1111-4111-8111-111111111111'),('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb','Sponsor','explore-sponsor','brand','22222222-2222-4222-8222-222222222222');
+insert into public.events(id,org_id,created_by,title,slug,format,status,starts_at,ends_at,timezone,categories,audience_types,attendance_band)
+select md5('event'||n)::uuid,'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','11111111-1111-4111-8111-111111111111','Event '||n,'explore-event-'||n,'online',case when n=2 then 'draft'::event_status else 'published'::event_status end,now()+case when n=3 then interval '-2 days' else interval '2 days' end,now()+case when n=3 then interval '-1 day' else interval '3 days' end,'Asia/Seoul',array['hackathon'],array['developers'],'200-999' from generate_series(1,3)n;
+insert into public.opportunities(id,type,event_id,owner_org_id,created_by,title,slug,status)
+select md5('package'||n)::uuid,'package',md5('event'||case when n<=3 then n else 1 end)::uuid,'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','11111111-1111-4111-8111-111111111111','Package '||n,'package-'||n,case when n=4 then 'draft'::opportunity_status else 'published'::opportunity_status end from generate_series(1,64)n;
+insert into public.opportunity_tiers(opportunity_id,name,price_minor,currency,in_kind,benefits,sort_order)
+select id,'Primary',1000,'USD',false,array['Logo'],0 from public.opportunities;
+insert into public.opportunity_tiers(opportunity_id,name,in_kind,benefits,sort_order)
+select id,'Secondary',true,array['Credits'],1 from public.opportunities;
+insert into public.opportunities(id,type,owner_org_id,created_by,title,slug,status,created_at)
+select md5('call'||n)::uuid,'call','bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb','22222222-2222-4222-8222-222222222222','Call '||n,'call-'||n,case when n=1 then 'draft'::opportunity_status else 'published'::opportunity_status end,now()+n*interval '1 second' from generate_series(1,62)n;
+insert into public.opportunity_call_details(opportunity_id,target_categories,target_regions,target_audience_types,target_attendance_bands)
+select id,array['hackathon'],array['asia'],array['developers'],array['200-999'] from public.opportunities where type='call';
+insert into public.opportunity_call_budgets(opportunity_id,budget_band) select id,'25k_plus' from public.opportunities where type='call';
+set constraints all immediate;
+set local role authenticated;
+set local request.jwt.claims='{"sub":"11111111-1111-4111-8111-111111111111","role":"authenticated"}';
+select is((select count(*) from public.list_public_opportunities('package',p_limit=>100000)),50::bigint,'max limit 50');
+select is((select count(*) from public.list_public_opportunities('package')),20::bigint,'default page 20');
+select is((select count(*) from public.list_public_opportunities('package',p_limit=>-1,p_offset=>-1)),1::bigint,'lower clamp');
+select ok(not exists(select 1 from public.list_public_opportunities('package',p_limit=>50) where slug in('package-2','package-3','package-4')),'owner drafts, draft parent and ended event absent');
+select is((select count(*) from public.list_public_opportunities('package',p_offset=>50,p_limit=>50)),11::bigint,'second page remainder');
+select is((select count(*) from (select opportunity_id from public.list_public_opportunities('package',p_limit=>50) intersect select opportunity_id from public.list_public_opportunities('package',p_offset=>50,p_limit=>50)) x),0::bigint,'no duplicate pages');
+select is((select array_agg(opportunity_id) from public.list_public_opportunities('package')),(select array_agg(opportunity_id) from public.list_public_opportunities('package')),'stable ordering');
+select is((select primary_tier_name from public.list_public_opportunities('package',p_limit=>1)),'Primary','sort_order primary');
+select is((select tier_count from public.list_public_opportunities('package',p_limit=>1)),2::bigint,'tier count');
+select ok((select has_cash_tier and has_in_kind_tier from public.list_public_opportunities('package',p_limit=>1)),'mixed tiers');
+select is((select primary_tier_currency from public.list_public_opportunities('package',p_limit=>1)),'USD','public price currency');
+select is((select count(*) from public.list_public_opportunities('package',p_categories=>array['hackathon'])),20::bigint,'package categories match');
+select is((select count(*) from public.list_public_opportunities('package',p_categories=>array['festival'])),0::bigint,'package categories nonmatch');
+select is((select count(*) from public.list_public_opportunities('package',p_audience_types=>array['developers'])),20::bigint,'package audience_types match');
+select is((select count(*) from public.list_public_opportunities('package',p_audience_types=>array['students'])),0::bigint,'package audience_types nonmatch');
+select is((select count(*) from public.list_public_opportunities('package',p_attendance_bands=>array['200-999'])),20::bigint,'package attendance_bands match');
+select is((select count(*) from public.list_public_opportunities('package',p_attendance_bands=>array['under-50'])),0::bigint,'package attendance_bands nonmatch');
+select is((select count(*) from public.list_public_opportunities('package',p_formats=>array['online'])),20::bigint,'package formats match');
+select is((select count(*) from public.list_public_opportunities('package',p_formats=>array['hybrid'])),0::bigint,'package formats nonmatch');
+select is((select count(*) from public.list_public_opportunities('package',p_categories=>array['festival','hackathon'],p_audience_types=>array['developers'])),20::bigint,'package OR within AND between');
+select is((select count(*) from public.list_public_opportunities('package',p_categories=>array['hackathon'],p_audience_types=>array['students'])),0::bigint,'package AND excludes');
+select is((select count(*) from public.list_public_opportunities('call',p_categories=>array['hackathon'])),20::bigint,'call categories match');
+select is((select count(*) from public.list_public_opportunities('call',p_categories=>array['festival'])),0::bigint,'call categories nonmatch');
+select is((select count(*) from public.list_public_opportunities('call',p_audience_types=>array['developers'])),20::bigint,'call audience_types match');
+select is((select count(*) from public.list_public_opportunities('call',p_audience_types=>array['students'])),0::bigint,'call audience_types nonmatch');
+select is((select count(*) from public.list_public_opportunities('call',p_attendance_bands=>array['200-999'])),20::bigint,'call attendance_bands match');
+select is((select count(*) from public.list_public_opportunities('call',p_attendance_bands=>array['under-50'])),0::bigint,'call attendance_bands nonmatch');
+select is((select count(*) from public.list_public_opportunities('call',p_regions=>array['asia'])),20::bigint,'call regions match');
+select is((select count(*) from public.list_public_opportunities('call',p_regions=>array['europe'])),0::bigint,'call regions nonmatch');
+select is((select count(*) from public.list_public_opportunities('call',p_categories=>array['festival','hackathon'],p_audience_types=>array['developers'])),20::bigint,'call OR within AND between');
+select is((select count(*) from public.list_public_opportunities('call',p_categories=>array['hackathon'],p_audience_types=>array['students'])),0::bigint,'call AND excludes');
+select throws_ok($$select * from public.list_public_opportunities('call',p_categories=>array['bogus'])$$,'22023','Invalid discovery filters','invalid filter safe rejection');
+select throws_ok($$select * from public.list_public_opportunities('call',p_categories=>array[null]::text[])$$,'22023','Invalid discovery filters','null element rejected');
+select is((select count(*) from public.list_public_opportunities('call',p_categories=>'{}')),20::bigint,'empty filters unrestricted');
+select is((select slug from public.list_public_opportunities('call',p_limit=>1)),'call-62','newest call first');
+select ok(not exists(select 1 from public.list_public_opportunities('call') x where to_jsonb(x)::text like '%budget%' or to_jsonb(x)::text like '%25k_plus%'),'RPC no private fields or values');
+set local request.jwt.claims='{"sub":"22222222-2222-4222-8222-222222222222","role":"authenticated"}';
+select ok(not exists(select 1 from public.list_public_opportunities('call',p_limit=>50) where slug='call-1'),'owner draft Call absent');
+select is((select count(*) from public.list_public_opportunities('call',p_offset=>50,p_limit=>50)),11::bigint,'Call second page');
+select is((select count(*) from (select opportunity_id from public.list_public_opportunities('call',p_limit=>50) intersect select opportunity_id from public.list_public_opportunities('call',p_offset=>50,p_limit=>50)) x),0::bigint,'Call no duplicate pages');
+select ok((select not prosecdef and provolatile='s' from pg_proc where proname='list_public_opportunities'),'stable SECURITY INVOKER');
+select ok((select position('opportunity_call_budgets' in prosrc)=0 from pg_proc where proname='list_public_opportunities'),'function never references private table');
+set local role anon;
+select throws_ok($$select * from public.list_public_opportunities('package')$$,'42501',null,'anonymous cannot execute');
+reset role;
+select * from finish();
+rollback;

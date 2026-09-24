@@ -509,6 +509,48 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      list_public_opportunities: {
+        Args: {
+          p_attendance_bands?: string[]
+          p_audience_types?: string[]
+          p_categories?: string[]
+          p_formats?: string[]
+          p_limit?: number
+          p_offset?: number
+          p_regions?: string[]
+          p_type: Database["public"]["Enums"]["opportunity_type"]
+        }
+        Returns: {
+          attendance_bands: string[]
+          audience_types: string[]
+          categories: string[]
+          city: string
+          country: string
+          created_at: string
+          ends_at: string
+          event_id: string
+          event_slug: string
+          event_title: string
+          excerpt: string
+          format: string
+          has_cash_tier: boolean
+          has_in_kind_tier: boolean
+          opportunity_id: string
+          organization_name: string
+          organization_slug: string
+          primary_tier_currency: string
+          primary_tier_in_kind: boolean
+          primary_tier_name: string
+          primary_tier_price_minor: number
+          regions: string[]
+          slug: string
+          starts_at: string
+          tier_count: number
+          timezone: string
+          title: string
+          type: Database["public"]["Enums"]["opportunity_type"]
+        }[]
+      }
       update_call_opportunity: {
         Args: {
           p_budget_band?: string
@@ -719,4 +761,3 @@ export const Constants = {
     },
   },
 } as const
-
