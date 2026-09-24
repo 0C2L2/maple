@@ -114,7 +114,11 @@ select ok((select not prosecdef from pg_proc where oid='public.create_package_op
 select ok((select not prosecdef from pg_proc where oid='public.update_package_opportunity(uuid,text,text,jsonb)'::regprocedure),'edit invoker');
 select is((select count(*) from information_schema.columns where table_name in ('opportunities','opportunity_tiers') and column_name like '%budget%'),0::bigint,'no public budget columns');
 reset role;
-insert into public.opportunities(type,created_by,title,slug) values('call','33333333-3333-4333-8333-333333333333','Reserved','reserved');
+set constraints all deferred;
+insert into public.opportunities(type,owner_org_id,created_by,title,slug) values('call',(select id from public.organizations where slug='opp-org'),'33333333-3333-4333-8333-333333333333','Reserved','reserved');
+insert into public.opportunity_call_details(opportunity_id,target_categories,target_regions,target_audience_types,target_attendance_bands)
+select id,array['hackathon'],array['asia'],array['developers'],array['200-999'] from public.opportunities where slug='reserved';
+set constraints all immediate;
 select throws_ok($$insert into public.opportunity_tiers(opportunity_id,name,in_kind,benefits) values((select id from public.opportunities where slug='reserved'),'Invalid',true,array['Logo'])$$,'23514',null,'cannot attach tier to call');
 reset role;
 select set_config('test.opportunity_id',(select id::text from public.opportunities where slug='partner'),true);

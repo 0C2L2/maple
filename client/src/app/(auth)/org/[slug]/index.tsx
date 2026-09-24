@@ -1,3 +1,4 @@
+import { OrganizationCalls } from '@/features/calls/Screens';
 import { OrganizationEvents } from '@/features/events/OrganizationEvents';
 import { useSession } from '@/providers/SessionProvider';
 import { Link } from 'expo-router';
@@ -27,6 +28,6 @@ export default function OrganizationPage() {
     {membership ? <Text className={textStyle}>Your membership: {membership.role === 'admin' ? 'Admin' : 'Member'}</Text> : null}
     {membership?.role === 'admin' ? <Link href={{ pathname: '/org/[slug]/edit', params: { slug: org.slug } }} asChild><Button label="Edit organization" /></Link> : null}
     <OrganizationEvents key={org.id + (session?.user.id || "anonymous")} orgId={org.id} canManage={profile?.role === "organizer" && membership?.role === "admin"} />
-    <Link href="/me" asChild><Button label="Back to profile" variant="secondary" /></Link>
+    <OrganizationCalls key={"calls:" + org.id + (session?.user.id || "anonymous")} /><Link href="/me" asChild><Button label="Back to profile" variant="secondary" /></Link>
   </AuthFrame>;
 }

@@ -60,7 +60,7 @@ Users pick one primary role at signup. Dual-role accounts come later (see §15).
 **Sponsor profile**
 - Name, photo, title, company (linked Organization)
 - **What we sponsor:** categories, audience types we want, regions
-- **Budget band per event:** `<$1K` · `$1–5K` · `$5–25K` · `$25–100K` · `$100K+`
+- **Budget band per event:** `Under $1K` · `$1–5K` · `$5–25K` · `$25K+` (D-022)
 - **What we give:** cash, in-kind (product, credits), swag, venue, speakers, mentors, prizes
 - **Timing:** budget cycle (e.g. "planning Q1 now")
 - Past sponsorships

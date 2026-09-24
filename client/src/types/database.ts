@@ -100,6 +100,7 @@ export type Database = {
           description: string | null
           event_id: string | null
           id: string
+          owner_org_id: string
           slug: string
           status: Database["public"]["Enums"]["opportunity_status"]
           title: string
@@ -112,6 +113,7 @@ export type Database = {
           description?: string | null
           event_id?: string | null
           id?: string
+          owner_org_id: string
           slug: string
           status?: Database["public"]["Enums"]["opportunity_status"]
           title: string
@@ -124,6 +126,7 @@ export type Database = {
           description?: string | null
           event_id?: string | null
           id?: string
+          owner_org_id?: string
           slug?: string
           status?: Database["public"]["Enums"]["opportunity_status"]
           title?: string
@@ -143,6 +146,83 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "opportunities_owner_org_id_fkey"
+            columns: ["owner_org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      opportunity_call_budgets: {
+        Row: {
+          budget_band: string
+          created_at: string
+          opportunity_id: string
+          updated_at: string
+        }
+        Insert: {
+          budget_band: string
+          created_at?: string
+          opportunity_id: string
+          updated_at?: string
+        }
+        Update: {
+          budget_band?: string
+          created_at?: string
+          opportunity_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "opportunity_call_budgets_opportunity_id_fkey"
+            columns: ["opportunity_id"]
+            isOneToOne: true
+            referencedRelation: "opportunities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      opportunity_call_details: {
+        Row: {
+          created_at: string
+          gives: string[]
+          opportunity_id: string
+          target_attendance_bands: string[]
+          target_audience_types: string[]
+          target_categories: string[]
+          target_regions: string[]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          gives?: string[]
+          opportunity_id: string
+          target_attendance_bands: string[]
+          target_audience_types: string[]
+          target_categories: string[]
+          target_regions: string[]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          gives?: string[]
+          opportunity_id?: string
+          target_attendance_bands?: string[]
+          target_audience_types?: string[]
+          target_categories?: string[]
+          target_regions?: string[]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "opportunity_call_details_opportunity_id_fkey"
+            columns: ["opportunity_id"]
+            isOneToOne: true
+            referencedRelation: "opportunities"
             referencedColumns: ["id"]
           },
         ]
@@ -372,6 +452,35 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      create_call_opportunity: {
+        Args: {
+          p_budget_band?: string
+          p_description: string
+          p_details: Json
+          p_org_id: string
+          p_slug: string
+          p_title: string
+        }
+        Returns: {
+          created_at: string
+          created_by: string
+          description: string | null
+          event_id: string | null
+          id: string
+          owner_org_id: string
+          slug: string
+          status: Database["public"]["Enums"]["opportunity_status"]
+          title: string
+          type: Database["public"]["Enums"]["opportunity_type"]
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "opportunities"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       create_package_opportunity: {
         Args: {
           p_description: string
@@ -386,6 +495,35 @@ export type Database = {
           description: string | null
           event_id: string | null
           id: string
+          owner_org_id: string
+          slug: string
+          status: Database["public"]["Enums"]["opportunity_status"]
+          title: string
+          type: Database["public"]["Enums"]["opportunity_type"]
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "opportunities"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      update_call_opportunity: {
+        Args: {
+          p_budget_band?: string
+          p_description: string
+          p_details: Json
+          p_id: string
+          p_title: string
+        }
+        Returns: {
+          created_at: string
+          created_by: string
+          description: string | null
+          event_id: string | null
+          id: string
+          owner_org_id: string
           slug: string
           status: Database["public"]["Enums"]["opportunity_status"]
           title: string
@@ -412,6 +550,7 @@ export type Database = {
           description: string | null
           event_id: string | null
           id: string
+          owner_org_id: string
           slug: string
           status: Database["public"]["Enums"]["opportunity_status"]
           title: string
