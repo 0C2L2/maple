@@ -66,12 +66,13 @@ export const ATTENDANCE_LABELS = {
 export type AttendanceBand = keyof typeof ATTENDANCE_LABELS;
 export const ATTENDANCE_BANDS = options(ATTENDANCE_LABELS);
 
+// Keys are the database enum (public.budget_band), read in thousands of won: '1k_5k' = ₩1–5M.
 export const BUDGET_LABELS = {
-  under_1k: 'Under $1K',
-  '1k_5k': '$1–5K',
-  '5k_25k': '$5–25K',
-  '25k_100k': '$25–100K',
-  '100k_plus': '$100K+',
+  under_1k: 'Under ₩1M',
+  '1k_5k': '₩1–5M',
+  '5k_25k': '₩5–25M',
+  '25k_100k': '₩25–100M',
+  '100k_plus': '₩100M+',
 } as const;
 export type BudgetBand = keyof typeof BUDGET_LABELS;
 export const BUDGET_BANDS = options(BUDGET_LABELS);
@@ -101,21 +102,26 @@ export const PROPOSAL_STATUS_LABELS = {
 export type ProposalStatus = keyof typeof PROPOSAL_STATUS_LABELS;
 export const PROPOSAL_STATUSES = options(PROPOSAL_STATUS_LABELS);
 
-// ponytail: a short curated list for the beachhead (D-002); becomes a `regions` table when it needs admin editing.
+// South Korea's 17 provinces and metropolitan cities. ponytail: becomes a `regions` table when it needs admin editing.
 export const REGION_LABELS = {
   online: 'Online',
-  'new-york': 'New York',
-  'san-francisco': 'San Francisco',
-  boston: 'Boston',
-  austin: 'Austin',
-  seattle: 'Seattle',
-  toronto: 'Toronto',
-  london: 'London',
-  berlin: 'Berlin',
-  bangalore: 'Bangalore',
-  singapore: 'Singapore',
-  seoul: 'Seoul / Incheon',
-  sydney: 'Sydney',
+  seoul: 'Seoul',
+  gyeonggi: 'Gyeonggi',
+  incheon: 'Incheon',
+  busan: 'Busan',
+  daegu: 'Daegu',
+  daejeon: 'Daejeon',
+  gwangju: 'Gwangju',
+  ulsan: 'Ulsan',
+  sejong: 'Sejong',
+  gangwon: 'Gangwon',
+  chungbuk: 'North Chungcheong',
+  chungnam: 'South Chungcheong',
+  jeonbuk: 'North Jeolla',
+  jeonnam: 'South Jeolla',
+  gyeongbuk: 'North Gyeongsang',
+  gyeongnam: 'South Gyeongsang',
+  jeju: 'Jeju',
 } as const;
 export type Region = keyof typeof REGION_LABELS;
 export const REGIONS = options(REGION_LABELS);
@@ -141,10 +147,10 @@ export type Deliverable = keyof typeof DELIVERABLE_LABELS;
 export const DELIVERABLES = options(DELIVERABLE_LABELS);
 
 export const CURRENCIES = [
+  { value: 'KRW', label: 'KRW ₩' },
   { value: 'USD', label: 'USD $' },
   { value: 'EUR', label: 'EUR €' },
   { value: 'GBP', label: 'GBP £' },
-  { value: 'KRW', label: 'KRW ₩' },
   { value: 'JPY', label: 'JPY ¥' },
   { value: 'INR', label: 'INR ₹' },
   { value: 'SGD', label: 'SGD' },

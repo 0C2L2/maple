@@ -10,11 +10,15 @@ const TYPES = ['image/png', 'image/jpeg', 'image/webp'];
  * Lets the user pick an image, uploads it to org-media/<org id>/, and returns its public URL.
  * Returns null if they cancel. Throws a readable Error for a wrong type or size.
  */
-export async function pickAndUploadImage(orgId: string, kind: 'logo' | 'banner' | 'cover'): Promise<string | null> {
+export async function pickAndUploadImage(
+  orgId: string,
+  kind: 'logo' | 'banner' | 'cover' | 'report',
+): Promise<string | null> {
   const picked = await ImagePicker.launchImageLibraryAsync({
     mediaTypes: ['images'],
     allowsEditing: true,
-    aspect: kind === 'banner' ? [4, 1] : [1, 1], // logos and event covers are square
+    // Logos and event covers are square; results-report photos are 4:3.
+    aspect: kind === 'banner' ? [4, 1] : kind === 'report' ? [4, 3] : [1, 1],
     quality: 0.8,
   });
   if (picked.canceled) return null;

@@ -2,7 +2,6 @@ import { Link, type Href } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/ui/themed-text';
-import { CONTACT_EMAIL } from '@/constants/site';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
@@ -67,9 +66,9 @@ export function SiteFooter() {
           <ThemedText type="small" themeColor="textSecondary">
             © {new Date().getFullYear()} Maple
           </ThemedText>
-          <Link href={`mailto:${CONTACT_EMAIL}`}>
+          <Link href="/contact">
             <ThemedText type="small" themeColor="textSecondary">
-              {CONTACT_EMAIL}
+              Contact us
             </ThemedText>
           </Link>
         </View>

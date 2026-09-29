@@ -31,12 +31,12 @@ The database enums and `constants/taxonomy.ts` must hold **exactly** these value
 | `category` | `hackathon`, `conference`, `meetup`, `workshop`, `festival`, `other` | Hackathon, Conference… |
 | `audience_type` | `developers`, `students`, `founders`, `designers`, `product`, `data`, `marketers`, `executives`, `general` | Developers, Students… |
 | `attendance_band` | `under_100`, `100_500`, `500_2000`, `2000_plus` | Under 100, 100–500, 500–2,000, 2,000+ |
-| `budget_band` | `under_1k`, `1k_5k`, `5k_25k`, `25k_100k`, `100k_plus` | Under $1K … $100K+ |
+| `budget_band` | `under_1k`, `1k_5k`, `5k_25k`, `25k_100k`, `100k_plus` (read in thousands of won) | Under ₩1M … ₩100M+ |
 | `gives` (what sponsors give / organizers want) | `cash`, `in_kind`, `credits`, `swag`, `venue`, `food`, `speakers`, `mentors`, `prizes` | Cash, In-kind… |
 | `boost_kind` | `search`, `post`, `org` | Search Boost… |
 | `plan` | `free`, `premium_organizer`, `premium_sponsor` (later: `scout`, `sponsor_suite`) | — |
 | `subscription_source` | `stripe`, `app_store`, `play_store` | — |
-| `region` | `online` + a curated list of city slugs (`new-york`, `san-francisco`, `london`, `toronto`, …) kept in `taxonomy.ts` and a `regions` table | New York… |
+| `region` | `online` + South Korea's 17 provinces and metropolitan cities (`seoul`, `gyeonggi`, `incheon`, `busan`, …) kept in `taxonomy.ts` | Seoul, Gyeonggi… |
 
 **Waitlist exception:** the Phase 0 `waitlist` table uses coarser sponsor budget values (`under_1k`, `1k_5k`, `5k_25k`, `25k_plus`) to keep the form short. It isn't a product table, and the product uses `budget_band` above.
 

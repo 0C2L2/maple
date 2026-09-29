@@ -31,7 +31,9 @@
 | LinkedIn revenue (FY2025) | ~$17.8B (+9%) | Microsoft reports via FourWeekMBA / Superstrat |
 | LinkedIn Premium subscriptions | >$2B trailing 12 months (Jan 2025) | MediaPost |
 
-**Takeaway:** Maple doesn't take a cut of sponsorship spend at first. It sells subscriptions, visibility, and tools to the people who move that spend. The sponsorship dollars show how valuable a match is, and that value is what users pay us for.
+> **Update 2026-09-29 ([D-029](../product/DECISIONS.md#d-029-monetization-commission-on-deals-paid-through-maple-plus-proposal-credits)):** Maple now charges a commission on deals paid through it, plus proposal credits. The subscription pricing, ARPU, and projections in §3, §6, and §7 describe the old LinkedIn-style plan and are kept for reference. The current plan is [MONETIZATION.md](MONETIZATION.md).
+
+**Takeaway (old plan):** Maple doesn't take a cut of sponsorship spend at first. It sells subscriptions, visibility, and tools to the people who move that spend. The sponsorship dollars show how valuable a match is, and that value is what users pay us for.
 
 ## 3. TAM / SAM / SOM (bottom-up, our assumptions)
 
@@ -85,6 +87,8 @@
 > **Unlike** LinkedIn (generic) or sponsorship marketplaces (static listings), Maple combines a live network, structured sponsorship data, and verified audiences.
 
 ## 6. Pricing
+
+> **Superseded by [D-029](../product/DECISIONS.md#d-029-monetization-commission-on-deals-paid-through-maple-plus-proposal-credits).** The current pricing is a commission on deals plus proposal credits: see [MONETIZATION.md](MONETIZATION.md). The benchmarks below are kept for reference.
 
 ### 6.1 LinkedIn benchmark (2026 list prices, per third-party guides)
 | LinkedIn plan | Monthly |

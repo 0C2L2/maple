@@ -204,7 +204,7 @@ export const emptyDraft = (seed?: { categories?: Category[]; regions?: Region[] 
   online: false,
   deadline: '',
   tiers: [],
-  currency: 'USD',
+  currency: 'KRW',
   goal: '',
   needs: '',
   deliverables: [],

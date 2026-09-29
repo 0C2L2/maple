@@ -17,23 +17,26 @@ const FREE = [
   'Reviews after completed deals',
 ];
 
-// Free during early access (docs/business/MONETIZATION.md, Stage 0). No prices until paid plans launch (D-011).
+// Free during early access; the planned fees (D-029, docs/business/MONETIZATION.md) start when payments launch.
 const SECTIONS = [
-  { title: 'What stays free', body: 'Posting, messaging, and reviews stay free.' },
   {
-    title: 'What’s coming',
+    title: 'What stays free',
+    body: 'Posting, browsing, messaging, and reviews stay free for everyone. Sponsors never pay, and always send proposals free.',
+  },
+  {
+    title: 'Planned fees, once payments launch',
     body: [
-      'Optional extras for organizations that want more reach: Premium, with more proposals and insights on who viewed your posts, and Boost, labeled priority in search.',
-      'We’ll publish prices here before anything launches.',
+      'A fee on cash deals paid through Maple: 8% of the deal, taken from the organizer’s payout. Sponsors pay the package price and nothing more. For the first 6 months it’s 5%, pilot events pay 0%, and the minimum fee is ₩10,000. In-kind deals, like food, cloud credits, mentors, or a venue, are free.',
+      'Extra proposals for organizers: each event gets 3 free proposals to sponsors, then ₩5,000 each, or 10 for ₩39,000. If a sponsor doesn’t reply within 14 days, the proposal is free again.',
     ],
   },
   {
-    title: 'Our promise',
-    body: 'If we add paid services, like getting paid through Maple, we’ll tell you 60 days ahead, and they’ll never apply to deals you’ve already made.',
+    title: 'How paying through Maple will work',
+    body: 'The sponsor pays Maple. We hold the money and pay the organizer after the event, once the results report is in. Organizers know they’ll be paid, and sponsors pay for an event that happened.',
   },
   {
-    title: 'Does Maple take a cut of deals?',
-    body: 'No. Maple doesn’t handle payments today, and there’s no fee on your deals.',
+    title: 'Our promise',
+    body: 'We’ll tell you 60 days before any fee starts, and fees never apply to deals already marked Won.',
   },
 ];
 
@@ -43,15 +46,15 @@ export default function PricingScreen() {
   return (
     <SitePage
       title="Pricing"
-      description="Maple is free during early access: posting, proposals, messaging, and reviews."
+      description="Maple is free during early access. Later, organizers pay a fee only on cash deals paid through Maple and on extra proposals. Sponsors never pay."
       path="/pricing"
-      lead="Maple is free during early access.">
+      lead="Maple is free during early access. Later, organizers pay only when a cash deal is paid through Maple. Sponsors never pay.">
       <Card>
         <View style={styles.planHead}>
           <ThemedText type="heading" level={2}>
-            Free
+            Free during early access
           </ThemedText>
-          <ThemedText type="title">$0</ThemedText>
+          <ThemedText type="title">₩0</ThemedText>
         </View>
         {FREE.map((item) => (
           <ThemedText key={item}>✓ {item}</ThemedText>

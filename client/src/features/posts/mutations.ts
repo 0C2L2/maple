@@ -137,20 +137,23 @@ export async function setPostStatus(id: string, status: 'open' | 'closed' | 'dra
 }
 
 /** Applies to a post. Returns the new conversation's thread id. */
+/** `eventPostId`: for a proposal to a sponsor post, the sender's own event post it pitches (3 free per event, D-029). */
 export async function sendProposal(
   postId: string,
   message: string,
   tierId: string | null,
   amountCents: number | null,
+  eventPostId: string | null = null,
 ): Promise<string> {
   const { data, error } = await supabase.rpc('send_proposal', {
     post: postId,
     message,
     tier_id: tierId,
     amount_cents: amountCents,
+    event_post: eventPostId,
   });
   if (error) throw new Error(error.code === '23505' ? 'You already proposed on this post.' : errorMessage(error));
-  track('proposal_sent', { with_tier: !!tierId, with_amount: amountCents != null });
+  track('proposal_sent', { with_tier: !!tierId, with_amount: amountCents != null, for_event: !!eventPostId });
   return data as string;
 }
 
@@ -160,6 +163,27 @@ export async function moveProposalStatus(id: string, status: ProposalStatus): Pr
   if (error) throw new Error(errorMessage(error));
   track('proposal_status_changed', { status });
   if (status === 'won') track('deal_won', { proposal_id: id });
+}
+
+/** The post owner marks a deal Won and records what was agreed: the cash amount and any in-kind items. */
+export async function markWon(id: string, cashCents: number | null, inKind: string | null): Promise<void> {
+  const { error } = await supabase
+    .from('proposals')
+    .update({ status: 'won', deal_cash_cents: cashCents, deal_in_kind: inKind })
+    .eq('id', id);
+  if (error) throw new Error(errorMessage(error));
+  track('proposal_status_changed', { status: 'won' });
+  track('deal_won', { proposal_id: id, with_cash: !!cashCents, with_in_kind: !!inKind });
+}
+
+export type ResultsReportInput = { attendance: number | null; summary: string; delivered: string; photos: string[] };
+
+/** The organizer reports an event's results to its sponsors, once the event has started (one report per event). */
+export async function saveResultsReport(postId: string, input: ResultsReportInput): Promise<void> {
+  const { error } = await supabase
+    .from('results_reports')
+    .upsert({ post_id: postId, ...input, updated_at: new Date().toISOString() });
+  if (error) throw new Error(errorMessage(error));
 }
 
 /** Either side of a won deal marks it completed after the event. Reviews open then. */

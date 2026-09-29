@@ -11,5 +11,13 @@ needed), saved here so the site doesn't hotlink. Resized to webp.
 | sponsor.webp | [Handshake](https://unsplash.com/photos/n95VMLxqM2I) | Cytonn Photography |
 | plan.webp | [Planning at a laptop](https://unsplash.com/photos/5fNmWej4tAA) | Scott Graham |
 | talk.webp | [Team at a laptop](https://unsplash.com/photos/QckxruozjRg) | Annie Spratt |
-| event.webp | [Crowd facing a stage](https://unsplash.com/photos/eXVd7gDPO9A) | ActionVance |
 | cta.webp | [Talk in front of a screen](https://unsplash.com/photos/bzdhc5b3Bxs) | Teemu Paananen |
+
+Our own photos from the HABSIDA Hackathon (Incheon, September 2026), supplied by the Maple team:
+
+| File | Photo |
+|---|---|
+| habsida-group.webp | Everyone at the hackathon under the event banner |
+| habsida-judges.webp | Judges and mentors watching a team demo |
+| habsida-team.webp | The second-place team with their certificate |
+| habsida-winners.webp | The winning team with the ₩1,500,000 first prize |

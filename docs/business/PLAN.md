@@ -69,19 +69,13 @@ The platform, the network mechanics, and the monetization all mirror LinkedIn. W
 
 ## 5. Monetization summary
 
-Mirrors LinkedIn's four revenue lines and adds pay-as-you-go visibility. Full pricing rationale and projections: [MARKET.md](MARKET.md).
+Two revenue lines, like Upwork's fee and Connects ([D-029](../product/DECISIONS.md#d-029-monetization-commission-on-deals-paid-through-maple-plus-proposal-credits)). Full plan, rules, and build steps: [MONETIZATION.md](MONETIZATION.md). The earlier LinkedIn-style lines (Premium, Boost, team seats, ads) are dropped.
 
-| Line | Product | Price (hypothesis) | LinkedIn equivalent |
+| Line | Who pays | Price (hypothesis) | Role |
 |---|---|---|---|
-| Premium subscriptions | Premium Organizer | $29/mo ($24/mo annual) | Premium Career ($39.99) |
-| | Premium Sponsor | $49/mo ($39/mo annual) | Premium Business ($59.99+) |
-| Sales tools | Maple Scout | $99/seat/mo | Sales Navigator Core ($99.99) |
-| Talent tools | Sponsor Suite | $179/seat/mo | Recruiter Lite ($170) |
-| Enterprise | Scout / Suite Enterprise | Custom | Sales Nav Advanced Plus / Recruiter Corporate |
-| Listings | Promoted Opportunities | CPC, from $5/day | Promoted Jobs |
-| Ads | Sponsored posts / PitchMail | CPM / CPC | Marketing Solutions |
-| **New** | **Boost (search priority)** | From $19 / 7 days | none |
-| **Later** | Maple Deals transaction fee | 3–5% of deal value | none |
+| **Commission on deals paid through Maple** | Organizers, out of their payout | 8% of each cash deal (5% for the first 6 months, 0% for pilot events, ₩10,000 minimum). In-kind deals are free. | The money-maker |
+| **Proposal credits** | Organizers, past 3 free proposals per event | ₩5,000 each, or 10 for ₩39,000. Returned if the sponsor doesn't reply within 14 days. | Spam control |
+| Everything else | – | Free for everyone. Sponsors never pay. | – |
 
 ## 6. Roadmap
 

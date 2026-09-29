@@ -26,7 +26,7 @@ const SECTIONS = [
   },
   {
     title: 'Fees',
-    body: 'Maple is free during early access. We may add paid services later, such as Premium plans, Boost, or payments through Maple. We’ll tell you at least 60 days before a new fee applies to you, and new fees never apply to deals already made.',
+    body: 'Maple is free during early access. When payments launch, Maple will charge organizers a fee on cash deals paid through Maple and on proposals beyond their free allowance, as shown on the pricing page. Sponsors don’t pay fees. We’ll tell you at least 60 days before a fee applies to you, and fees never apply to deals already marked Won.',
   },
   {
     title: 'What’s not allowed',

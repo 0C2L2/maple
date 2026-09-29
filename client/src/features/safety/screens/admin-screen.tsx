@@ -1,12 +1,13 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Link, router, type Href } from 'expo-router';
+import { Link, router, useLocalSearchParams, type Href } from 'expo-router';
 import { useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Linking, StyleSheet, View } from 'react-native';
 
+import { contactTopicLabel } from '@/constants/site';
 import { Spacing } from '@/constants/theme';
 import { reasonLabel } from '@/features/safety/report-reasons';
 import { useIsStaff } from '@/features/safety/use-is-staff';
-import { formatDate, timeAgo } from '@/lib/format';
+import { formatDate, formatMoney, timeAgo } from '@/lib/format';
 import { errorMessage, supabase } from '@/lib/supabase';
 import { Button } from '@/ui/button';
 import { Card } from '@/ui/card';
@@ -19,11 +20,13 @@ import { TabStrip } from '@/ui/tab-strip';
 import { TextField } from '@/ui/text-field';
 import { ThemedText } from '@/ui/themed-text';
 
-type Tab = 'reports' | 'orgs' | 'posts' | 'broadcast' | 'log';
+type Tab = 'reports' | 'inbox' | 'orgs' | 'posts' | 'finance' | 'broadcast' | 'log';
 const TABS = [
   { value: 'reports' as const, label: 'Reports' },
+  { value: 'inbox' as const, label: 'Inbox' },
   { value: 'orgs' as const, label: 'Organizations' },
   { value: 'posts' as const, label: 'Posts' },
+  { value: 'finance' as const, label: 'Finance' },
   { value: 'broadcast' as const, label: 'Broadcast' },
   { value: 'log' as const, label: 'Log' },
 ];
@@ -38,6 +41,8 @@ const ACTION_LABELS: Record<string, string> = {
   remove_review: 'Removed review',
   dismiss_report: 'Dismissed report',
   broadcast: 'Messaged',
+  set_pilot: 'Made a pilot event (0% fee)',
+  unset_pilot: 'Ended pilot (normal fee)',
 };
 
 const AUDIENCES = [
@@ -54,7 +59,8 @@ const AUDIENCES = [
  */
 export default function AdminScreen() {
   const { isStaff, checking } = useIsStaff();
-  const [tab, setTab] = useState<Tab>('reports');
+  const params = useLocalSearchParams<{ tab?: string }>();
+  const [tab, setTab] = useState<Tab>(TABS.find((t) => t.value === params.tab)?.value ?? 'reports');
   if (checking) return <Loading />;
   if (!isStaff)
     return (
@@ -71,9 +77,11 @@ export default function AdminScreen() {
         <TabStrip tabs={TABS} value={tab} onChange={setTab} />
       </Card>
       {tab === 'reports' && <ReportsTab />}
+      {tab === 'inbox' && <InboxTab />}
       {tab === 'orgs' && <OrganizationsTab />}
       {tab === 'posts' && <PostsTab />}
       {tab === 'broadcast' && <BroadcastTab />}
+      {tab === 'finance' && <FinanceTab />}
       {tab === 'log' && <LogTab />}
     </Screen>
   );
@@ -167,6 +175,79 @@ function ReportsTab() {
                 title="Dismiss"
                 variant="secondary"
                 onPress={() => run(`d${report.id}`, 'resolve_report', { report: report.id, remove: false })}
+              />
+            </View>
+          </Card>
+        ))
+      )}
+    </>
+  );
+}
+
+type ContactMessage = {
+  id: string;
+  topic: string;
+  name: string;
+  email: string;
+  message: string;
+  org_handle: string | null;
+  created_at: string;
+};
+
+// Messages from the /contact form. We reply from our own mail app, then mark them done.
+function InboxTab() {
+  const { run, error } = useAdminAction();
+  const { data: messages, isPending } = useQuery({
+    queryKey: ['admin', 'inbox'],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('admin_contact_messages');
+      if (error) throw error;
+      return data as ContactMessage[];
+    },
+  });
+  return (
+    <>
+      <ThemedText themeColor="textSecondary">
+        Messages from the contact form, oldest first. Reply by email, then mark them done.
+      </ThemedText>
+      <ErrorLine error={error} />
+      {isPending ? (
+        <Loading />
+      ) : !messages?.length ? (
+        <Notice title="Inbox is empty" />
+      ) : (
+        messages.map((m) => (
+          <Card key={m.id}>
+            <ThemedText type="caption" themeColor="link">
+              {contactTopicLabel(m.topic).toUpperCase()} · {timeAgo(m.created_at)}
+            </ThemedText>
+            <ThemedText type="subheading">{m.name}</ThemedText>
+            <View style={styles.actions}>
+              <ThemedText type="small" themeColor="textSecondary">
+                {m.email}
+              </ThemedText>
+              {m.org_handle && (
+                <Link href={`/org/${m.org_handle}`}>
+                  <ThemedText type="small" themeColor="link">
+                    @{m.org_handle}
+                  </ThemedText>
+                </Link>
+              )}
+            </View>
+            <ThemedText>{m.message}</ThemedText>
+            <View style={styles.actions}>
+              <Button
+                title="Reply by email"
+                onPress={() =>
+                  Linking.openURL(
+                    `mailto:${m.email}?subject=${encodeURIComponent(`Re: ${contactTopicLabel(m.topic)} (Maple)`)}`,
+                  )
+                }
+              />
+              <Button
+                title="Mark done"
+                variant="secondary"
+                onPress={() => run(`c${m.id}`, 'admin_close_contact_message', { msg: m.id })}
               />
             </View>
           </Card>
@@ -278,6 +359,7 @@ type AdminPost = {
   created_at: string;
   removed_at: string | null;
   removed_reason: string | null;
+  pilot: boolean;
 };
 
 function PostsTab() {
@@ -319,7 +401,19 @@ function PostsTab() {
                 TAKEN DOWN {formatDate(post.removed_at.slice(0, 10))} · {post.removed_reason}
               </ThemedText>
             )}
+            {post.pilot && (
+              <ThemedText type="smallStrong" themeColor="link">
+                PILOT EVENT · 0% fee on its deals
+              </ThemedText>
+            )}
             <View style={styles.actions}>
+              {post.kind === 'event' && (
+                <Button
+                  title={post.pilot ? 'End pilot' : 'Make pilot (0% fee)'}
+                  variant="secondary"
+                  onPress={() => run(`p${post.id}`, 'admin_set_pilot', { post: post.id, pilot: !post.pilot })}
+                />
+              )}
               {post.removed_at ? (
                 <Button
                   title="Restore"
@@ -490,8 +584,78 @@ function LogTab() {
   );
 }
 
+type Finance = {
+  by_currency: {
+    currency: string;
+    cash_deals: number;
+    gmv: number;
+    pilot_gmv: number;
+    fees_at_launch: number;
+    fees_at_full: number;
+  }[];
+  deals: number;
+  in_kind_only: number;
+  no_value: number;
+  pitches: number;
+  pitches_answered: number;
+};
+
+// Won and Completed deals and what they would pay once payments launch (D-029), plus whether organizers'
+// proposals to sponsors get answers (the spam-control check). Nothing is charged yet.
+function FinanceTab() {
+  const { data, isPending } = useQuery({
+    queryKey: ['admin', 'finance'],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('admin_finance');
+      if (error) throw error;
+      return data as Finance;
+    },
+  });
+  if (isPending) return <Loading />;
+  if (!data) return <Notice title="No numbers yet" />;
+  const answered = data.pitches ? Math.round((data.pitches_answered / data.pitches) * 100) : 0;
+  return (
+    <>
+      <ThemedText themeColor="textSecondary">
+        Won and completed deals, and what they would pay once payments launch. Nothing is charged yet.
+      </ThemedText>
+      {data.by_currency.map((c) => (
+        <Card key={c.currency}>
+          <ThemedText type="subheading">Cash deals in {c.currency}</ThemedText>
+          <Stat label="Deals with cash" value={String(c.cash_deals)} />
+          <Stat label="Deal value (GMV)" value={formatMoney(c.gmv, c.currency)} />
+          <Stat label="From pilot events (0% fee)" value={formatMoney(c.pilot_gmv, c.currency)} />
+          <Stat label="Fees at the launch rate (5%)" value={formatMoney(c.fees_at_launch, c.currency)} />
+          <Stat label="Fees at the full rate (8%)" value={formatMoney(c.fees_at_full, c.currency)} />
+        </Card>
+      ))}
+      <Card>
+        <ThemedText type="subheading">All deals</ThemedText>
+        <Stat label="Won or completed" value={String(data.deals)} />
+        <Stat label="In-kind only (no fee)" value={String(data.in_kind_only)} />
+        <Stat label="No value recorded" value={String(data.no_value)} />
+      </Card>
+      <Card>
+        <ThemedText type="subheading">Organizers’ proposals to sponsors</ThemedText>
+        <Stat label="Sent" value={String(data.pitches)} />
+        <Stat label="Answered within 14 days" value={`${data.pitches_answered} (${answered}%)`} />
+      </Card>
+    </>
+  );
+}
+
+function Stat({ label, value }: { label: string; value: string }) {
+  return (
+    <View style={styles.stat}>
+      <ThemedText themeColor="textSecondary">{label}</ThemedText>
+      <ThemedText type="bodyStrong">{value}</ThemedText>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   tabs: { padding: 0, gap: 0, overflow: 'hidden' },
+  stat: { flexDirection: 'row', justifyContent: 'space-between', gap: Spacing.three },
   actions: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two },
   logRow: { gap: Spacing.half, paddingVertical: Spacing.one },
 });

@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Image } from 'expo-image';
 import { Link, Redirect, router, type Href } from 'expo-router';
 import { SymbolView, type SymbolViewProps } from 'expo-symbols';
-import { useEffect, useState, type ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useReducedMotion } from 'react-native-reanimated';
 
@@ -34,26 +34,40 @@ const PHOTOS = {
   cta: require('@/assets/images/site/cta.webp'),
 };
 
-const STEPS = [
-  {
-    title: 'Post',
-    body: 'Organizers post their event: plan, audience, and what sponsors get. Sponsors post what they back. Free.',
-    image: require('@/assets/images/site/plan.webp'),
-    alt: 'Planning an event at a laptop',
-  },
-  {
-    title: 'Compare proposals',
-    body: 'The other side sends proposals with a tier and an amount. Shortlist, talk in private messages, and pick.',
-    image: require('@/assets/images/site/talk.webp'),
-    alt: 'A team talking over a laptop',
-  },
-  {
-    title: 'Close and review',
-    body: 'Mark the deal Won, run the event, then both sides leave a review that builds trust for the next deal.',
-    image: require('@/assets/images/site/event.webp'),
-    alt: 'A crowd in front of a lit stage',
-  },
+type Side = 'organizers' | 'sponsors';
+const SIDES: { value: Side; label: string }[] = [
+  { value: 'organizers', label: 'For organizers' },
+  { value: 'sponsors', label: 'For sponsors' },
 ];
+// Three cards per side; the first (no photo) is the animated Maple card.
+const HOW: Record<Side, { caption: string; image?: number; alt?: string }[]> = {
+  organizers: [
+    { caption: 'Posting your event is always free' },
+    {
+      caption: 'Get proposals from sponsors',
+      image: require('@/assets/images/site/habsida-judges.webp'),
+      alt: 'Judges and mentors watching a team demo at the HABSIDA Hackathon',
+    },
+    {
+      caption: 'Pick sponsors and run your event',
+      image: require('@/assets/images/site/habsida-group.webp'),
+      alt: 'Everyone at the HABSIDA Hackathon under the event banner',
+    },
+  ],
+  sponsors: [
+    { caption: 'Posting what you back is always free' },
+    {
+      caption: 'Find events that reach your audience',
+      image: require('@/assets/images/site/habsida-team.webp'),
+      alt: 'An international team at the HABSIDA Hackathon with their second-place certificate',
+    },
+    {
+      caption: 'Send a proposal and close the deal',
+      image: require('@/assets/images/site/habsida-winners.webp'),
+      alt: 'The winning team at the HABSIDA Hackathon holding the ₩1,500,000 first prize',
+    },
+  ],
+};
 
 const TRUST: { title: string; body: string; icon: SymbolViewProps['name'] }[] = [
   {
@@ -88,7 +102,7 @@ const ICON_TYPES: { category: Category; icon: SymbolViewProps['name'] }[] = [
 const FAQ = [
   {
     q: 'Is Maple free?',
-    a: 'Yes, during early access. Posting, messaging, and reviews stay free. The pricing page has the details.',
+    a: 'Yes, during early access. Posting, messaging, and reviews stay free. Later, organizers pay a fee only on cash deals paid through Maple and on extra proposals. Sponsors never pay. The pricing page has the details.',
   },
   {
     q: 'Can one organization both run events and sponsor others?',
@@ -96,7 +110,7 @@ const FAQ = [
   },
   {
     q: 'Does Maple handle payments?',
-    a: 'Not yet. Organizations agree the payment directly. Our trust and safety page has tips for doing that safely.',
+    a: 'Not yet. Soon sponsors will pay through Maple, and we’ll pay the organizer after the event, once the results report is in. Until then, organizations agree the payment directly. Our trust and safety page has tips for doing that safely.',
   },
   {
     q: 'Is Maple for individuals?',
@@ -130,7 +144,7 @@ function Landing() {
         <Showcases />
         <WhyMaple />
         <Section tinted>
-          <Steps />
+          <HowItWorks />
         </Section>
         <Section>
           <Faq />
@@ -395,75 +409,86 @@ function WhyMaple() {
   );
 }
 
-// The steps advance on their own every 5 seconds (the bar under the active step fills in that time),
-// stop once someone picks a step, and hold still for visitors who ask for reduced motion.
-function Steps() {
+// Upwork-style: a For organizers / For sponsors switch and three picture cards with a caption each. The cards rise
+// in one after another when the side changes; the first card's gradient drifts until paused. Visitors who ask for
+// reduced motion get still cards and no pause button.
+function HowItWorks() {
   const theme = useTheme();
   const wide = useIsWide(900);
   const reduceMotion = useReducedMotion();
-  const [active, setActive] = useState(0);
-  const [picked, setPicked] = useState(false);
-  const auto = !reduceMotion && !picked;
-  useEffect(() => {
-    if (!auto) return;
-    const timer = setInterval(() => setActive((i) => (i + 1) % STEPS.length), 5000);
-    return () => clearInterval(timer);
-  }, [auto]);
+  const [side, setSide] = useState<Side>('organizers');
+  const [playing, setPlaying] = useState(true);
 
   return (
-    <View style={[styles.split, wide && styles.row]}>
-      <View style={[styles.splitText, wide && styles.fill]}>
+    <>
+      <View style={[styles.howHead, wide && styles.howHeadWide]}>
         <ThemedText type="title" level={2}>
           How it works
         </ThemedText>
-        <View role="tablist" style={styles.stepList}>
-          {STEPS.map((step, i) => {
-            const on = i === active;
+        <View role="tablist" aria-label="How it works for" style={[styles.toggle, { borderColor: theme.border }]}>
+          {SIDES.map((s) => {
+            const on = s.value === side;
             return (
               <Pressable
-                key={step.title}
+                key={s.value}
                 role="tab"
                 aria-selected={on}
-                onPress={() => {
-                  setPicked(true);
-                  setActive(i);
-                }}
-                style={styles.step}>
-                <View style={[styles.track, { backgroundColor: theme.border }]}>
-                  {on && (
-                    <View
-                      key={active}
-                      {...motion(auto ? { fill: '' } : {})}
-                      style={[styles.trackFill, { backgroundColor: theme.brand }]}
-                    />
-                  )}
-                </View>
-                <ThemedText type="subheading" themeColor={on ? 'text' : 'textSecondary'}>
-                  {i + 1}. {step.title}
-                </ThemedText>
-                {on && (
-                  <View {...motion({ open: '' })}>
-                    <ThemedText themeColor="textSecondary">{step.body}</ThemedText>
-                  </View>
-                )}
+                onPress={() => setSide(s.value)}
+                style={[styles.toggleItem, on && { borderColor: theme.text }]}>
+                <ThemedText>{s.label}</ThemedText>
               </Pressable>
             );
           })}
         </View>
-        <SeeAll href="/how-it-works" label="How it works in detail" />
       </View>
-      <View style={[styles.stepArt, wide && styles.stepArtWide]}>
-        {STEPS.map((step, i) => (
-          <View
-            key={step.title}
-            {...motion({ crossfade: '' })}
-            aria-hidden={i !== active}
-            style={[StyleSheet.absoluteFill, { opacity: i === active ? 1 : 0 }]}>
-            <Image source={step.image} accessibilityLabel={step.alt} style={styles.cover} contentFit="cover" />
+      <View style={[styles.howCards, wide && styles.row]}>
+        {HOW[side].map((card, i) => (
+          <View key={`${side}-${i}`} {...motion({ enter: i })} style={[styles.howCard, wide && styles.fill]}>
+            {card.image ? (
+              <Image
+                source={card.image}
+                accessibilityLabel={card.alt}
+                style={[styles.howArt, wide && styles.howArtWide]}
+                contentFit="cover"
+              />
+            ) : (
+              <View
+                {...motion({ drift: playing ? '' : 'paused' })}
+                style={[styles.howArt, wide && styles.howArtWide, styles.driftArt, { backgroundColor: theme.brandSoft }]}>
+                <View style={styles.driftBrand}>
+                  <Image source={require('@/assets/images/logo.png')} style={styles.driftLogo} contentFit="contain" />
+                  <ThemedText style={styles.driftWordmark}>Maple</ThemedText>
+                </View>
+                <Link href={{ pathname: '/signup', params: { role: side === 'sponsors' ? 'sponsor' : 'organizer' } }}>
+                  <ThemedText type="bodyStrong">Get started</ThemedText>
+                </Link>
+                {!reduceMotion && (
+                  <Pressable
+                    role="button"
+                    accessibilityLabel={playing ? 'Pause animation' : 'Play animation'}
+                    onPress={() => setPlaying(!playing)}
+                    style={[styles.pause, { backgroundColor: theme.background }]}>
+                    <SymbolView
+                      name={
+                        playing
+                          ? { ios: 'pause.fill', android: 'pause', web: 'pause' }
+                          : { ios: 'play.fill', android: 'play_arrow', web: 'play_arrow' }
+                      }
+                      tintColor={theme.text}
+                      size={20}
+                    />
+                  </Pressable>
+                )}
+              </View>
+            )}
+            <ThemedText type="lead" style={styles.howCaption}>
+              {card.caption}
+            </ThemedText>
           </View>
         ))}
       </View>
-    </View>
+      <SeeAll href={{ pathname: '/how-it-works', params: { for: side } }} label="How it works in detail" />
+    </>
   );
 }
 
@@ -630,12 +655,39 @@ const styles = StyleSheet.create({
   point: { flexDirection: 'row', gap: Spacing.three, alignItems: 'flex-start' },
   pointText: { gap: Spacing.one },
 
-  stepList: { gap: Spacing.two },
-  step: { gap: Spacing.two, paddingVertical: Spacing.two },
-  track: { height: 3, borderRadius: 2, overflow: 'hidden' },
-  trackFill: { height: 3, width: '100%' },
-  stepArt: { height: 280, borderRadius: 24, overflow: 'hidden' },
-  stepArtWide: { flex: 1, height: 440 },
+  howHead: { gap: Spacing.three },
+  howHeadWide: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  toggle: { flexDirection: 'row', alignSelf: 'flex-start', borderWidth: 1, borderRadius: 999 },
+  // Each segment overlaps the outline by a pixel so the picked one's dark border replaces it.
+  toggleItem: {
+    minHeight: 44,
+    justifyContent: 'center',
+    paddingHorizontal: Spacing.four,
+    margin: -1,
+    borderWidth: 1.5,
+    borderColor: 'transparent',
+    borderRadius: 999,
+  },
+  howCards: { gap: Spacing.four },
+  howCard: { gap: Spacing.three },
+  howArt: { width: '100%', height: 220, borderRadius: 16, overflow: 'hidden' },
+  howArtWide: { height: 260 },
+  driftArt: { alignItems: 'center', justifyContent: 'center', gap: Spacing.two },
+  driftBrand: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
+  driftLogo: { width: 44, height: 44 },
+  driftWordmark: { fontSize: 40, lineHeight: 48, fontWeight: 700, letterSpacing: -1 },
+  pause: {
+    position: 'absolute',
+    right: Spacing.three,
+    bottom: Spacing.three,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    boxShadow: '0 6px 16px -8px rgba(0, 0, 0, 0.35)',
+  },
+  howCaption: { paddingHorizontal: Spacing.one },
 
   faqIntro: { gap: Spacing.three },
   faqIntroWide: { width: 320 },

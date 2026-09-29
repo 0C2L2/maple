@@ -24,7 +24,7 @@ const STEPS: Record<Side, { title: string; body: string }[]> = {
     },
     {
       title: 'Post your event',
-      body: 'Share the event plan, dates and place, expected attendance, the support you need, and what sponsors get. Add priced tiers, like Gold $5,000, if you have them.',
+      body: 'Share the event plan, dates and place, expected attendance, the support you need, and what sponsors get. Add priced tiers, like Gold ₩5,000,000, if you have them.',
     },
     {
       title: 'Receive proposals',
@@ -83,7 +83,7 @@ const STATUSES = [
 const FAQ = [
   {
     title: 'Does Maple take a cut of the deal?',
-    body: 'No. Maple is free during early access and doesn’t handle payments. You agree the payment directly with the other organization.',
+    body: 'Not during early access. Once payments launch, organizers pay a fee on cash deals paid through Maple (8%, or 5% for the first 6 months), taken from their payout. In-kind deals are free, and sponsors never pay a fee. The pricing page has the details.',
   },
   {
     title: 'Who sees my proposal?',

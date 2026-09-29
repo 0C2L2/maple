@@ -13,23 +13,23 @@
 
 | ID | Decision | Status | Date |
 |---|---|---|---|
-| D-001 | Copy LinkedIn's product and monetization model | Accepted | 2026-09-24 |
+| D-001 | Copy LinkedIn's product and monetization model | Accepted (monetization replaced by D-029) | 2026-09-24 |
 | D-002 | Beachhead: tech events and hackathons, English-speaking markets | Proposed | 2026-09-24 |
 | D-003 | Treat sponsors as the scarce side; free for them during beta | Accepted | 2026-09-24 |
 | D-004 | North-star metric: Matched Conversations per week | Accepted | 2026-09-24 |
-| D-005 | Boost rules: flat price, labeled, max 2 per 10, relevance ≥ 0.3 | Accepted | 2026-09-24 |
+| D-005 | Boost rules: flat price, labeled, max 2 per 10, relevance ≥ 0.3 | Superseded by D-029 | 2026-09-24 |
 | D-006 | One primary role per account in the MVP | Accepted | 2026-09-24 |
 | D-007 | Stack: Next.js + Supabase + Stripe + Vercel | Superseded by D-015, D-016 | 2026-09-24 |
 | D-008 | Search with Postgres full-text before adding a search engine | Accepted | 2026-09-24 |
 | D-009 | Responsive web first, no native apps in the MVP | Superseded by D-015 | 2026-09-24 |
-| D-010 | No transaction fee until Maple Deals (Phase 4) | Accepted | 2026-09-24 |
-| D-011 | Pricing: $29 / $49 / $99 / $179 per month | Proposed | 2026-09-24 |
-| D-012 | Sponsor budget bands visible to Premium Organizers only | Proposed | 2026-09-24 |
+| D-010 | No transaction fee until Maple Deals (Phase 4) | Superseded by D-029 | 2026-09-24 |
+| D-011 | Pricing: $29 / $49 / $99 / $179 per month | Superseded by D-029 | 2026-09-24 |
+| D-012 | Sponsor budget bands visible to Premium Organizers only | Superseded by D-029 | 2026-09-24 |
 | D-013 | Validate with a concierge MVP before writing code | Accepted | 2026-09-24 |
 | D-014 | One repo: `docs/` for planning, `apps/` for code, `supabase/` shared | Superseded by D-018 | 2026-09-24 |
 | D-015 | One Expo codebase for the website, iOS app, and Android app | Accepted | 2026-09-24 |
 | D-016 | Cloudflare for DNS, web hosting, and email forwarding | Accepted | 2026-09-24 |
-| D-017 | Payments: Stripe on the web first, in-app purchases via RevenueCat before store launch | Accepted | 2026-09-24 |
+| D-017 | Payments: Stripe on the web first, in-app purchases via RevenueCat before store launch | Accepted (provider replaced by D-029) | 2026-09-24 |
 | D-018 | Repo layout: `docs/`, `client/`, `supabase/` | Accepted | 2026-09-24 |
 | D-019 | Public plans page is `/pricing`; `/premium` redirects to it | Proposed | 2026-09-24 |
 | D-020 | One sign-in route `/login` for sign-in and sign-up; `/signup` redirects to it | Proposed | 2026-09-24 |
@@ -41,11 +41,13 @@
 | D-026 | A sponsorship marketplace like Upwork/Wishket: posts, proposals, reviews | Accepted | 2026-09-24 |
 | D-027 | Public website pages and safety tools before launch | Accepted | 2026-09-25 |
 | D-028 | One organization can both run events and sponsor others | Accepted | 2026-09-25 |
+| D-029 | Monetization: commission on deals paid through Maple, plus proposal credits | Proposed | 2026-09-29 |
+| D-030 | Email and password sign-in, with separate sign-up and sign-in pages | Accepted | 2026-09-25 |
 
 ---
 
 ## D-001: Copy LinkedIn's product and monetization model
-- **Status:** Accepted · 2026-09-24
+- **Status:** Accepted · 2026-09-24 (the monetization half is replaced by D-029)
 - **Context:** Organizers and sponsors already understand LinkedIn: profiles, connections, feed, jobs, InMail, Premium. LinkedIn proves professionals pay for visibility and search (Premium passed $2B a year; see [MARKET.md](../business/MARKET.md)).
 - **Decision:** Mirror LinkedIn's objects and paid tiers one to one (see the table in [PLAN.md §3](../business/PLAN.md#3-the-solution-linkedins-model-mapped-to-sponsorship)). Add sponsorship-specific features on top: Boost, Verified Audience, Fit Score, deal pipeline.
 - **Consequences:** Near-zero learning curve and an easy pitch ("LinkedIn for sponsorship"). The risk is feeling like a clone, so the sponsorship-specific depth is what differentiates us.
@@ -73,7 +75,7 @@
 - **Revisit when:** We have enough deal data to switch the north star to deals won.
 
 ## D-005: Boost rules
-- **Status:** Accepted · 2026-09-24
+- **Status:** Superseded by D-029 (no Boost) · 2026-09-24
 - **Context:** Paid search priority is a key revenue feature, but pay-to-win results destroy trust. Paid placement must also be disclosed (FTC guidance on search advertising).
 - **Decision:** Flat price ($19–$29 for 7 days). Always labeled "Boosted". Fixed slots #1 and #6, so max 2 per 10 results. Relevance must be ≥ 0.3. When several boosts compete, the higher organic score wins. Full rules are in [MVP.md §7.2](MVP.md#72-boost-paid-search-priority).
 - **Consequences:** Less short-term revenue than an auction, but more trust.
@@ -104,19 +106,19 @@
 - **Revisit when:** More than 50% of sessions are on mobile **and** retention is proven.
 
 ## D-010: No transaction fee until Maple Deals
-- **Status:** Accepted · 2026-09-24
+- **Status:** Superseded by D-029 (the commission is the main revenue line) · 2026-09-24
 - **Context:** A fee on deals invites people to take the deal off-platform and adds legal and financial complexity (contracts, escrow).
 - **Decision:** Pure subscription and Boost revenue until Maple Deals (Phase 4), which will add real value: contracts, escrow, payouts.
 - **Revisit when:** Users ask Maple to handle contracts or payments.
 
 ## D-011: Pricing is $29 / $49 / $99 / $179 per month
-- **Status:** Proposed · 2026-09-24 (tested in Phase 0 interviews and pre-sales)
+- **Status:** Superseded by D-029 (no subscriptions) · 2026-09-24
 - **Context:** The LinkedIn benchmarks are $39.99 / $59.99 / $99.99 / $170. Organizers have less money than job seekers.
 - **Decision:** Premium Organizer $29, Premium Sponsor $49, Scout $99 per seat, Sponsor Suite $179 per seat. Annual plans are about 20% off. See [MARKET.md §6](../business/MARKET.md#6-pricing).
 - **Revisit when:** Phase 0 willingness-to-pay answers cluster far from these numbers.
 
 ## D-012: Sponsor budget bands visible to Premium Organizers only
-- **Status:** Proposed · 2026-09-24
+- **Status:** Superseded by D-029 (no Premium; budget bands are visible to everyone) · 2026-09-24
 - **Context:** Budget visibility is valuable to organizers and a strong reason to upgrade, but sponsors may hesitate to share it.
 - **Decision:** Sponsors enter a budget band. Only Premium Organizers can see it.
 - **Revisit when:** Sponsors in interviews refuse to share budget bands at all.
@@ -156,7 +158,7 @@
 - **Revisit when:** We add server rendering and exceed the free Workers limits (Workers Paid is $5/mo).
 
 ## D-017: Payments: Stripe on the web first, in-app purchases via RevenueCat before store launch
-- **Status:** Accepted · 2026-09-24
+- **Status:** Accepted · 2026-09-24 (the provider is replaced by D-029: a Korean PG instead of Stripe; credits are sold on the website first)
 - **Context:** In most countries, Apple and Google require their own billing for digital subscriptions sold inside apps, and US rules on linking to web checkout are still changing. Beta testers use TestFlight and Play closed testing, not the public stores.
 - **Decision:**
   - During beta: Stripe on the website only.
@@ -275,6 +277,17 @@
 - **Decision:** `organization.role` stays as the primary role (onboarding, Find defaults), but any organization can publish event posts and sponsor posts, and any organization except the post's owner can send a proposal. Find sponsors lists organizations with the sponsor role or an open sponsor post.
 - **Consequences:** The post insert rule and `send_proposal` no longer check the role. The new-post screen asks which kind. Past events live in `showcases` (Wishket-style portfolio) on `/showcase` and the organization page.
 - **Revisit when:** Organizations need separate team members per side (then add members and roles).
+
+## D-029: Monetization: commission on deals paid through Maple, plus proposal credits
+- **Status:** Proposed · 2026-09-29 (replaces D-005, D-010, D-011, and D-012; replaces the payment provider in D-017 and the monetization half of D-001)
+- **Context:** Organizers run one or two events a year, so monthly Premium plans would churn between events. The value is in the deal. Maple starts in Korea, where deals are in won.
+- **Decision:** Two revenue lines. Details and build plan: [MONETIZATION.md](../business/MONETIZATION.md).
+  - **Commission:** 8% of each cash deal paid through Maple, from the organizer's payout. 5% for the first 6 months after payments go live, 0% for pilot events, ₩10,000 minimum. In-kind deals are free. The sponsor pays Maple; the payment provider holds the money until the results report is in, then pays the organizer.
+  - **Proposal credits:** organizers get 3 free proposals to sponsors per event, then ₩5,000 each or 10 for ₩39,000. A credit comes back if the sponsor doesn't reply within 14 days.
+  - **Sponsors never pay** and always propose free (D-003).
+  - No Premium, Boost, team seats, or ads. Never promise "no fees".
+- **Consequences:** Payments move to a Korean PG with a payout service (Toss Payments or PortOne) instead of Stripe. Proposals record the event they pitch, the deal's cash amount and in-kind items, and the fee rate. Organizers submit a results report after the event. Budget bands stay visible to everyone, since there's no Premium to gate them. The site stops saying Maple takes no cut.
+- **Revisit when:** Most Won cash deals are paid outside Maple, most deals turn out in-kind, or organizers stop at their 3 free proposals and churn.
 
 ## D-030: Email and password sign-in, with separate sign-up and sign-in pages
 - **Status:** Accepted · 2026-09-25 (replaces D-020 and the email-code-only sign-in in TECH_STACK)

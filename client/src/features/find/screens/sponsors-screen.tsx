@@ -1,8 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
-import { Linking, StyleSheet, View } from 'react-native';
+import { router } from 'expo-router';
+import { StyleSheet, View } from 'react-native';
 import { useState } from 'react';
 
-import { CONTACT_EMAIL } from '@/constants/site';
 import { BUDGET_LABELS, CATEGORIES, GIVE_LABELS, type BudgetBand, type Give } from '@/constants/taxonomy';
 import { Spacing } from '@/constants/theme';
 import { OrgLogo } from '@/features/organizations/components/org-logo';
@@ -84,7 +84,7 @@ export default function SponsorsScreen() {
           <Button
             title="Tell us what you need"
             variant="secondary"
-            onPress={() => Linking.openURL(`mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent('Find me sponsors')}`)}
+            onPress={() => router.push('/contact?topic=intro')}
           />
         </Card>
       )}

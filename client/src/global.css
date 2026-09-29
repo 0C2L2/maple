@@ -17,14 +17,28 @@
   --font-serif: Georgia, 'Times New Roman', serif;
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --lift-shadow: 0 14px 30px -14px rgba(120, 45, 20, 0.3);
+  --nav-hover: #c8331b; /* theme.link */
+  --drift: linear-gradient(120deg, #fbede8 0%, #f6c3ae 30%, #fdfcfa 55%, #f4d9a6 80%, #fbede8 100%);
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) {
     --lift-shadow: 0 16px 34px -14px rgba(0, 0, 0, 0.7);
+    --nav-hover: #ff8a5c;
+    --drift: linear-gradient(120deg, #2a1b17 0%, #4d2418 30%, #1e1c1b 55%, #3b2c15 80%, #2a1b17 100%);
   }
 }
 :root[data-theme='dark'] {
   --lift-shadow: 0 16px 34px -14px rgba(0, 0, 0, 0.7);
+  --nav-hover: #ff8a5c;
+  --drift: linear-gradient(120deg, #2a1b17 0%, #4d2418 30%, #1e1c1b 55%, #3b2c15 80%, #2a1b17 100%);
+}
+
+/* Website header links and menu titles take the link color on hover. */
+@media (hover: hover) {
+  [data-nav]:hover,
+  [data-nav]:hover * {
+    color: var(--nav-hover) !important;
+  }
 }
 
 html {
@@ -70,6 +84,12 @@ textarea[dir='auto'] {
 [data-lift]:focus-visible {
   outline: 2px solid #c8331b;
   outline-offset: 3px;
+}
+
+/* The animated Maple card in How it works: a wide maple-red, cream, and amber gradient (it moves in the motion rules). */
+[data-drift] {
+  background-image: var(--drift);
+  background-size: 300% 300%;
 }
 
 /* A soft maple-red light in the corner of the home hero. */
@@ -137,12 +157,13 @@ textarea[dir='auto'] {
     transform: none;
   }
 }
-@keyframes maple-fill {
-  from {
-    transform: scaleX(0);
+@keyframes maple-drift {
+  0%,
+  100% {
+    background-position: 0% 50%;
   }
-  to {
-    transform: scaleX(1);
+  50% {
+    background-position: 100% 50%;
   }
 }
 
@@ -180,13 +201,12 @@ textarea[dir='auto'] {
   [data-open] {
     animation: maple-open 260ms var(--ease-out) both;
   }
-  /* How it works: the active step's bar fills over the 5 seconds before the next step. */
-  [data-fill] {
-    transform-origin: left;
-    animation: maple-fill 5s linear both;
+  /* How it works: the first card's gradient drifts; its pause button sets data-drift="paused". */
+  [data-drift] {
+    animation: maple-drift 14s ease-in-out infinite;
   }
-  [data-crossfade] {
-    transition: opacity 600ms var(--ease-out);
+  [data-drift='paused'] {
+    animation-play-state: paused;
   }
   [data-turn] {
     transition: transform 220ms var(--ease-out);

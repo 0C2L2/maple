@@ -31,10 +31,12 @@ import {
   TimelineSection,
   ValueSection,
 } from '@/features/posts/components/pitch-sections';
+import { ResultsReport } from '@/features/posts/components/results-report';
 import { useIsSaved, usePost, useProposalCount, useTierSlots, type PostDetailData } from '@/features/posts/queries';
 import { OrgLogo } from '@/features/organizations/components/org-logo';
 import { useTheme } from '@/hooks/use-theme';
 import { ReportLink } from '@/features/safety/components/report-link';
+import { EXTRA_PROPOSAL_KRW, FREE_PROPOSALS_PER_EVENT } from '@/lib/fees';
 import { formatDate, formatMoney, toMinor } from '@/lib/format';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/ui/button';
@@ -148,6 +150,7 @@ export function PostDetail({ id }: { id: string }) {
         ) : (
           <ProposalPanel post={p} tierId={tierId} onTierChange={setTierId} open={state.open} />
         )}
+        {p.kind === 'event' && <ResultsReport postId={p.id} startsOn={p.starts_on} isOwner={isOwner} />}
 
         {p.body ? (
           <Block title={p.kind === 'event' ? 'About the event' : 'About'}>
@@ -314,6 +317,35 @@ function ProposalPanel({
   const tiers = [...p.post_tiers].sort((a, b) => a.position - b.position);
 
   const { data: mine } = useMyProposal(p.id, me);
+  // A proposal to a sponsor post pitches one of your open event posts; each event gets 3 free (D-029).
+  const pitchesEvent = p.kind === 'sponsor';
+  const [eventId, setEventId] = useState<string | null>(null);
+  const { data: myEvents } = useQuery({
+    queryKey: ['posts', 'my-open-events', me],
+    enabled: !!me && pitchesEvent,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('posts')
+        .select('id, title')
+        .eq('owner_id', me!)
+        .eq('kind', 'event')
+        .eq('status', 'open')
+        .is('removed_at', null)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data as { id: string; title: string }[];
+    },
+  });
+  const chosenEvent = eventId ?? (myEvents?.length === 1 ? myEvents[0].id : null);
+  const { data: used } = useQuery({
+    queryKey: ['proposals', 'event-used', chosenEvent],
+    enabled: !!chosenEvent,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('event_proposals_used', { event_post: chosenEvent });
+      if (error) throw error;
+      return data as number;
+    },
+  });
 
   if (mine)
     return (
@@ -328,13 +360,14 @@ function ProposalPanel({
 
   const send = async () => {
     if (!me) return router.push('/login');
+    if (pitchesEvent && !chosenEvent) return setError('Pick the event this proposal is for.');
     if (!message.trim()) return setError('Write a short message with your proposal.');
     const cents = amount ? toMinor(amount, p.currency) : null;
     if (amount && !(cents != null && cents >= 0)) return setError('Amount must be a number, like 2500.');
     setBusy(true);
     setError(undefined);
     try {
-      const threadId = await sendProposal(p.id, message.trim(), tierId, cents);
+      const threadId = await sendProposal(p.id, message.trim(), tierId, cents, pitchesEvent ? chosenEvent : null);
       queryClient.invalidateQueries({ queryKey: ['proposals'] });
       queryClient.invalidateQueries({ queryKey: ['threads'] });
       router.push(`/messages/${threadId}`);
@@ -358,6 +391,33 @@ function ProposalPanel({
           onChange={(v) => onTierChange(v || null)}
         />
       )}
+      {me &&
+        pitchesEvent &&
+        myEvents &&
+        (myEvents.length === 0 ? (
+          <ThemedText themeColor="textSecondary">
+            A proposal to a sponsor pitches one of your events.{' '}
+            <Link href="/posts/new">
+              <ThemedText themeColor="link">Post your event first.</ThemedText>
+            </Link>
+          </ThemedText>
+        ) : (
+          <>
+            <ChoiceChips
+              label="Which of your events is this for?"
+              options={myEvents.map((e) => ({ value: e.id, label: e.title }))}
+              value={chosenEvent}
+              onChange={setEventId}
+            />
+            {chosenEvent && used != null && (
+              <ThemedText type="small" themeColor="textSecondary">
+                {used < FREE_PROPOSALS_PER_EVENT
+                  ? `${FREE_PROPOSALS_PER_EVENT - used} of ${FREE_PROPOSALS_PER_EVENT} free proposals left for this event. A proposal comes back if the sponsor doesn’t reply within 14 days.`
+                  : `This event has used its ${FREE_PROPOSALS_PER_EVENT} free proposals. Extra proposals are free during early access, then ${formatMoney(EXTRA_PROPOSAL_KRW, 'KRW')} each.`}
+              </ThemedText>
+            )}
+          </>
+        ))}
       {me && (
         <>
           <TextField
@@ -382,7 +442,11 @@ function ProposalPanel({
           {error}
         </ThemedText>
       )}
-      <Button title={busy ? 'Sending…' : me ? 'Send proposal' : 'Sign in to propose'} onPress={send} disabled={busy} />
+      <Button
+        title={busy ? 'Sending…' : me ? 'Send proposal' : 'Sign in to propose'}
+        onPress={send}
+        disabled={busy || (pitchesEvent && myEvents?.length === 0)}
+      />
     </Card>
   );
 }

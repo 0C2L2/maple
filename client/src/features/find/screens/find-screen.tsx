@@ -1,8 +1,7 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { Linking, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
-import { CONTACT_EMAIL } from '@/constants/site';
 
 import { BUDGET_BANDS, CATEGORIES, POST_KINDS, REGIONS, type Category } from '@/constants/taxonomy';
 import { Spacing } from '@/constants/theme';
@@ -221,7 +220,7 @@ function NoResults({ signedIn }: { signedIn: boolean }) {
         <Button
           title="Tell us what you need"
           variant="secondary"
-          onPress={() => Linking.openURL(`mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent('Introduce me')}`)}
+          onPress={() => router.push('/contact?topic=intro')}
         />
       </View>
     </Card>

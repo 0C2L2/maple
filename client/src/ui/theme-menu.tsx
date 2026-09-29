@@ -1,9 +1,10 @@
 import { SymbolView, type SymbolViewProps } from 'expo-symbols';
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { Platform, Pressable, StyleSheet, View } from 'react-native';
 
 import { Spacing } from '@/constants/theme';
 import { setThemePreference, useThemePreference, type ThemePreference } from '@/hooks/use-color-scheme';
+import { useDismiss } from '@/hooks/use-dismiss';
 import { useTheme } from '@/hooks/use-theme';
 import { motion } from '@/ui/motion';
 import { ThemedText } from '@/ui/themed-text';
@@ -22,23 +23,7 @@ export function ThemeMenu() {
   const preference = useThemePreference();
   const [open, setOpen] = useState(false);
   const box = useRef<View>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    // React Native Web views are DOM elements.
-    const outside = (e: MouseEvent) => {
-      if (!(box.current as unknown as HTMLElement | null)?.contains(e.target as Node)) setOpen(false);
-    };
-    const escape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setOpen(false);
-    };
-    document.addEventListener('mousedown', outside);
-    document.addEventListener('keydown', escape);
-    return () => {
-      document.removeEventListener('mousedown', outside);
-      document.removeEventListener('keydown', escape);
-    };
-  }, [open]);
+  useDismiss(open, () => setOpen(false), box);
 
   if (Platform.OS !== 'web') return null;
   const current = MODES.find((m) => m.value === preference) ?? MODES[0];
