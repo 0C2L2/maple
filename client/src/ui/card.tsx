@@ -9,16 +9,22 @@ import { motion } from '@/ui/motion';
 type Props = { children: ReactNode; href?: Href; onPress?: () => void; style?: StyleProp<ViewStyle> };
 
 // A bordered box. With `href` the whole card is a link (an <a> on the web), so don't nest buttons in it.
-// `onPress` runs before navigating (used for analytics). Linked cards lift on hover on the web.
+// `onPress` runs before navigating (used for analytics). On the web every card gets the soft surface in global.css
+// ([data-card]); linked cards also lift on hover and light their border under the cursor ([data-spot]).
 export function Card({ children, href, onPress, style }: Props) {
   const theme = useTheme();
   const box = [styles.card, { borderColor: theme.border, backgroundColor: theme.background }, style];
-  if (!href) return <View style={box}>{children}</View>;
+  if (!href)
+    return (
+      <View {...motion({ card: '' })} style={box}>
+        {children}
+      </View>
+    );
   return (
     // Link's Slot merges style objects and drops style functions, so this must be a plain object.
     // ponytail: no pressed highlight; the web shows a pointer cursor, add an overlay if native needs feedback.
     <Link href={href} asChild onPress={onPress}>
-      <Pressable {...motion({ lift: '' })} style={StyleSheet.flatten(box)}>
+      <Pressable {...motion({ lift: '', card: '', spot: '' })} style={StyleSheet.flatten(box)}>
         {children}
       </Pressable>
     </Link>

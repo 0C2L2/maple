@@ -9,6 +9,7 @@ import { useSession } from '@/features/auth/session';
 import { useUnreadCount } from '@/features/notifications/use-unread';
 import { OrgLogo } from '@/features/organizations/components/org-logo';
 import { useIsStaff } from '@/features/safety/use-is-staff';
+import { useIsWide } from '@/hooks/use-is-wide';
 import { useTheme } from '@/hooks/use-theme';
 import { supabase } from '@/lib/supabase';
 import { ThemeMenu } from '@/ui/theme-menu';
@@ -32,6 +33,8 @@ const ITEMS: Item[] = [
 export function TopNav() {
   const theme = useTheme();
   const pathname = usePathname();
+  // Labels sit beside the icons when there's room; narrower desktops show the icons alone.
+  const roomy = useIsWide(1240);
   const { org } = useSession();
   const unread = useUnreadCount();
   const { isStaff } = useIsStaff();
@@ -75,16 +78,16 @@ export function TopNav() {
                 aria-current={active ? 'page' : undefined}
                 accessibilityLabel={badge ? `${item.label}, ${badge} unread` : item.label}
                 // Link's Slot merges style objects, so a Link child's style must be one flat object.
-                style={StyleSheet.flatten([styles.item, { borderBottomColor: active ? theme.text : 'transparent' }])}>
+                style={styles.item}>
                 <View>
-                  <SymbolView name={item.icon} tintColor={color} size={24} />
+                  <SymbolView name={item.icon} tintColor={color} size={18} />
                   {badge > 0 && (
                     <View style={[styles.badge, { backgroundColor: theme.brand }]}>
                       <Text style={[styles.badgeText, { color: theme.onBrand }]}>{badge > 9 ? '9+' : badge}</Text>
                     </View>
                   )}
                 </View>
-                <Text style={[styles.label, { color }]}>{item.label}</Text>
+                {roomy && <Text style={[styles.label, { color }, active && styles.labelActive]}>{item.label}</Text>}
               </Pressable>
             </Link>
           );
@@ -97,8 +100,8 @@ export function TopNav() {
               aria-expanded={menuOpen}
               accessibilityLabel="Me menu"
               onPress={() => setMenuOpen(!menuOpen)}
-              style={[styles.item, { borderBottomColor: 'transparent' }]}>
-              <OrgLogo name={org.name} url={org.logo_url} size={24} />
+              style={styles.item}>
+              <OrgLogo name={org.name} url={org.logo_url} size={20} />
               <Text style={[styles.label, { color: theme.textSecondary }]}>Me ▾</Text>
             </Pressable>
             {menuOpen && (
@@ -167,16 +170,16 @@ const styles = StyleSheet.create({
   postButtonText: { ...font, fontSize: 14, fontWeight: 700 },
   search: { width: 260, height: 36, borderRadius: 6, paddingHorizontal: Spacing.three, fontSize: 14 },
   spacer: { flex: 1 },
+  // Luma-style: a small icon to the left of the label; the current section is brighter and bolder.
   item: {
-    minWidth: 76,
     height: 56,
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: 2,
-    borderBottomWidth: 2,
-    paddingHorizontal: Spacing.one,
+    gap: Spacing.one + Spacing.half,
+    paddingHorizontal: Spacing.two,
   },
-  label: { ...font, fontSize: 12, lineHeight: 16 },
+  label: { ...font, fontSize: 15, lineHeight: 20, fontWeight: 500 },
+  labelActive: { fontWeight: 700 },
   badge: {
     position: 'absolute',
     top: -4,

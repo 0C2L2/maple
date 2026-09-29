@@ -43,7 +43,7 @@ export function ThemeMenu() {
       </Pressable>
       {open && (
         <View
-          {...motion({ open: '' })}
+          {...motion({ open: '', glass: '' })}
           role="menu"
           aria-label="Color mode"
           style={[styles.menu, { backgroundColor: theme.background, borderColor: theme.border }]}>

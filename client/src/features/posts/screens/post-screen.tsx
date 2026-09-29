@@ -89,10 +89,11 @@ export function PostDetail({ id }: { id: string }) {
   const details = postDetails(p);
   const state = postState(p);
 
-  return (
-    <View onLayout={(e) => setWidth(e.nativeEvent.layout.width)} style={[styles.detail, twoColumns && styles.detailWide]}>
+  // Wide: the cover, host, and details sit in a left column. Phones: a short cover banner first, the post itself,
+  // then the host card at the end, so the title isn't pushed below the fold.
+  const side = (
       <View style={twoColumns ? styles.side : styles.stack}>
-        {p.cover_url ? <Image source={p.cover_url} style={styles.cover} contentFit="cover" /> : null}
+        {twoColumns && p.cover_url ? <Image source={p.cover_url} style={styles.cover} contentFit="cover" /> : null}
         <Card>
           <ThemedText type="caption" themeColor="textSecondary">
             {p.kind === 'event' ? 'HOSTED BY' : 'POSTED BY'}
@@ -115,7 +116,12 @@ export function PostDetail({ id }: { id: string }) {
         {twoColumns && <DetailsCard rows={details} />}
         {!isOwner && <ReportLink type="post" id={p.id} />}
       </View>
+  );
 
+  return (
+    <View onLayout={(e) => setWidth(e.nativeEvent.layout.width)} style={[styles.detail, twoColumns && styles.detailWide]}>
+      {!twoColumns && p.cover_url ? <Image source={p.cover_url} style={styles.coverBanner} contentFit="cover" /> : null}
+      {twoColumns && side}
       <View style={twoColumns ? styles.main : styles.stack}>
         <View style={styles.header}>
           <ThemedText type="caption" themeColor="link">
@@ -178,6 +184,7 @@ export function PostDetail({ id }: { id: string }) {
           </Block>
         )}
       </View>
+      {!twoColumns && side}
     </View>
   );
 }
@@ -532,6 +539,7 @@ const styles = StyleSheet.create({
   main: { flex: 1, minWidth: 0, gap: Spacing.four },
   stack: { gap: Spacing.four },
   cover: { width: '100%', aspectRatio: 1, borderRadius: 16 },
+  coverBanner: { width: '100%', aspectRatio: 16 / 9, borderRadius: 16 },
   info: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
   infoIcon: { width: 48, height: 48, borderRadius: 12, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   infoText: { flex: 1 },

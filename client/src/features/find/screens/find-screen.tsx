@@ -56,6 +56,8 @@ export default function FindScreen() {
   const [region, setRegion] = useState('');
   const [budget, setBudget] = useState('');
   const [sort, setSort] = useState('recent');
+  // Phones: the filters fold behind one button so the results start near the top.
+  const [showFilters, setShowFilters] = useState(false);
 
   const isSearch = tab === 'matches' || tab === 'recent';
   const search = usePostSearch(q, {
@@ -70,6 +72,7 @@ export default function FindScreen() {
   const saved = useSavedPosts(tab === 'saved' ? org?.id : undefined);
   const rows = search.data?.pages.flat() ?? [];
   const filtered = !!(categories.length || region || budget);
+  const activeFilters = categories.length + (region ? 1 : 0) + (budget ? 1 : 0);
 
   const filters = (
     <Card>
@@ -108,6 +111,7 @@ export default function FindScreen() {
           }}
         />
       )}
+      {!wide && <Button title="Show results" onPress={() => setShowFilters(false)} />}
     </Card>
   );
 
@@ -159,7 +163,17 @@ export default function FindScreen() {
           <TabStrip tabs={SIGNED_IN_TABS} value={tab} onChange={setTab} />
         </Card>
       )}
-      {!wide && isSearch && filters}
+      {!wide &&
+        isSearch &&
+        (showFilters ? (
+          filters
+        ) : (
+          <Button
+            title={activeFilters ? `Filters · ${activeFilters}` : 'Filters'}
+            variant="secondary"
+            onPress={() => setShowFilters(true)}
+          />
+        ))}
       {results}
       {!org && <Button title="Join to post and send proposals" onPress={() => router.push('/signup')} />}
     </View>
@@ -234,7 +248,7 @@ function SearchBox({ initial, onSubmit }: { initial: string; onSubmit: (text: st
       <View style={styles.searchInput}>
         <TextField
           label="Search posts"
-          placeholder="Hackathon in Boston, cloud credits, student meetups…"
+          placeholder="Hackathon in Seoul, cloud credits, student meetups…"
           value={text}
           onChangeText={setText}
           onSubmitEditing={() => onSubmit(text.trim())}

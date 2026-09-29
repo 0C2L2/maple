@@ -21,6 +21,7 @@ export default function Root({ children }: PropsWithChildren) {
         <link rel="preload" href="/fonts/geist-latin-wght.woff2" as="font" type="font/woff2" crossOrigin="" />
         <ScrollViewStyleReset />
         <script dangerouslySetInnerHTML={{ __html: savedTheme }} />
+        <script dangerouslySetInnerHTML={{ __html: spotlight }} />
         <style dangerouslySetInnerHTML={{ __html: pageBackground }} />
       </head>
       <body>{children}</body>
@@ -30,6 +31,9 @@ export default function Root({ children }: PropsWithChildren) {
 
 // Applies the theme picked on the website (same key as use-color-scheme.web.ts) before the first paint.
 const savedTheme = `try{var t=localStorage.getItem('maple-theme');if(t==='light'||t==='dark')document.documentElement.dataset.theme=t}catch(e){}`;
+
+// Feeds the pointer position to the card under it, for the border spotlight in global.css ([data-spot]).
+const spotlight = `document.addEventListener('pointermove',function(e){var t=e.target&&e.target.closest&&e.target.closest('[data-spot]');if(!t)return;var r=t.getBoundingClientRect();t.style.setProperty('--sx',e.clientX-r.left+'px');t.style.setProperty('--sy',e.clientY-r.top+'px')},{passive:true});`;
 
 // Same background as the app, so dark mode doesn't flash white before React loads. A saved choice beats
 // the device setting.

@@ -7,13 +7,14 @@ import { Linking, Pressable, ScrollView, StyleSheet, Text, TextInput, View } fro
 import { useReducedMotion } from 'react-native-reanimated';
 
 import { CATEGORY_LABELS, type Category } from '@/constants/taxonomy';
-import { MaxContentWidth, Spacing } from '@/constants/theme';
+import { Fonts, MaxContentWidth, Spacing } from '@/constants/theme';
 import { useSession } from '@/features/auth/session';
 import { OrgLogo } from '@/features/organizations/components/org-logo';
 import { PostCard } from '@/features/posts/components/post-card';
 import { usePostSearch } from '@/features/posts/queries';
 import { ShowcaseCard } from '@/features/showcase/components/showcase-card';
 import { useShowcases } from '@/features/showcase/queries';
+import { EventMap } from '@/features/site/components/event-map';
 import { SiteFooter } from '@/features/site/components/site-footer';
 import { useIsWide } from '@/hooks/use-is-wide';
 import { useTheme } from '@/hooks/use-theme';
@@ -29,9 +30,7 @@ const DESCRIPTION =
 
 // Photos: assets/images/site/CREDITS.md.
 const PHOTOS = {
-  hero: require('@/assets/images/site/hero.webp'),
   sponsor: require('@/assets/images/site/sponsor.webp'),
-  cta: require('@/assets/images/site/cta.webp'),
 };
 
 type Side = 'organizers' | 'sponsors';
@@ -134,27 +133,33 @@ function Landing() {
   const theme = useTheme();
   const [showBar, setShowBar] = useState(false);
   return (
-    <View style={[styles.fill, { backgroundColor: theme.background }]}>
+    <View {...motion({ home: '' })} style={[styles.fill, { backgroundColor: theme.background }]}>
       <ScrollView onScroll={(e) => setShowBar(e.nativeEvent.contentOffset.y > 640)} scrollEventThrottle={100}>
         <PageMeta title="Maple" description={DESCRIPTION} path="/" />
+        <View nativeID="main" />
         <Hero />
-        <Organizations />
-        <EventTypes />
-        <FeaturedPosts />
-        <Showcases />
-        <WhyMaple />
-        <Section tinted>
-          <HowItWorks />
-        </Section>
-        <Section>
-          <BothSides />
-        </Section>
-        <Section>
-          <Faq />
-        </Section>
-        <Section>
-          <FinalCta />
-        </Section>
+        {/* Cloudflare-style framing on wide screens: dashed rails at the content edges. */}
+        <View style={styles.framed}>
+          <Organizations />
+          <EventsAcrossKorea />
+          <EventTypes />
+          <FeaturedPosts />
+          <Showcases />
+          <WhyMaple />
+          <Section tinted>
+            <HowItWorks />
+          </Section>
+          <Section swoosh>
+            <BothSides />
+          </Section>
+          <Section>
+            <Faq />
+          </Section>
+          <Section>
+            <FinalCta />
+          </Section>
+          <View {...motion({ railLines: '' })} style={styles.rails} />
+        </View>
         <SiteFooter />
       </ScrollView>
       {showBar && <StickyBar />}
@@ -162,65 +167,155 @@ function Landing() {
   );
 }
 
+const HERO_CHIPS: Category[] = ['hackathon', 'conference', 'meetup', 'workshop'];
+// The search always uses dark text on the white pill, over the photo, in both themes.
+const INK = '#1C1917';
+
+// Upwork-style hero: the announcement bar, then a big rounded photo card (the HABSIDA Hackathon) with the headline,
+// an organizing / sponsoring switch that picks what the search finds, the search pill, and event-type chips.
 function Hero() {
-  const theme = useTheme();
   const wide = useIsWide(960);
+  const [side, setSide] = useState<Side>('organizers');
   const [q, setQ] = useState('');
-  const latest = usePostSearch('', { sort: 'recent' }, 'landing').data?.pages.flat()[0];
-  const search = () => router.push({ pathname: '/find', params: q.trim() ? { q: q.trim() } : {} });
+  const kind = side === 'organizers' ? 'sponsor' : 'event';
+  const search = () => router.push({ pathname: '/find', params: { kind, ...(q.trim() ? { q: q.trim() } : {}) } });
 
   return (
-    <View {...motion({ glow: '' })} style={styles.heroBand}>
-      <View style={[styles.sectionInner, styles.hero, wide && styles.row]}>
-        <View style={[styles.heroText, wide && styles.heroTextWide]}>
-          <View {...motion({ enter: 0 })}>
-            <ThemedText type="caption" themeColor="link">
-              THE SPONSORSHIP MARKETPLACE FOR ORGANIZATIONS
-            </ThemedText>
-          </View>
-          <View {...motion({ enter: 1 })}>
-            <ThemedText level={1} style={[styles.heroTitle, wide && styles.heroTitleWide]}>
-              Post your event once. <Text style={{ color: theme.link }}>Sponsors send you proposals.</Text>
-            </ThemedText>
-          </View>
-          <View {...motion({ enter: 2 })}>
-            <ThemedText type="lead" themeColor="textSecondary" style={styles.measure}>
-              Organizers post their event, sponsors post what they back, and the other side sends proposals.
-            </ThemedText>
-          </View>
-          <View {...motion({ enter: 3 })} style={styles.heroActions}>
-            <View style={styles.buttons}>
-              <Button title="Post your event free" onPress={() => router.push('/posts/new')} />
-              <Button title="Find sponsors" variant="secondary" onPress={() => router.push('/sponsors')} />
-            </View>
-            <TextInput
-              accessibilityLabel="Search posts"
-              placeholder="Search events and sponsors, like “hackathon in Seoul”"
-              placeholderTextColor={theme.textSecondary}
-              value={q}
-              onChangeText={setQ}
-              onSubmitEditing={search}
-              returnKeyType="search"
-              style={[styles.heroSearch, { backgroundColor: theme.backgroundElement, borderColor: theme.border, color: theme.text }]}
-            />
-          </View>
-        </View>
-        <View {...motion({ enter: 4 })} style={[styles.heroArt, wide && styles.heroArtWide]}>
+    <View style={styles.heroBand}>
+      <View style={[styles.sectionInner, styles.heroStack]}>
+        <AnnouncementBar />
+        <View {...motion({ enter: 0, photo: '' })} style={[styles.heroBox, wide && styles.heroBoxWide]}>
           <Image
-            source={PHOTOS.hero}
-            accessibilityLabel="A speaker on stage in front of a full audience"
-            style={[styles.heroPhoto, wide && styles.heroPhotoWide]}
+            source={require('@/assets/images/site/hero.webp')}
+            accessibilityLabel="A speaker on stage in front of a packed, warmly lit event hall"
+            style={StyleSheet.absoluteFill}
             contentFit="cover"
             priority="high"
           />
-          {latest && (
-            <View style={[styles.heroCard, wide && styles.heroCardWide]}>
-              <PostCard post={latest} />
+          <View {...motion({ shade: '' })} style={StyleSheet.absoluteFill} />
+          <View style={[styles.heroContent, wide && styles.heroContentWide]}>
+            <ThemedText level={1} style={[styles.heroTitle, wide && styles.heroTitleWide, styles.onPhoto]}>
+              Post your event once. Sponsors send you proposals.
+            </ThemedText>
+            <ThemedText type="lead" style={[styles.onPhoto, styles.measure]}>
+              The sponsorship marketplace for event organizers and the companies that back them, starting in Korea.
+            </ThemedText>
+            <View role="tablist" aria-label="I am" style={styles.heroToggle}>
+              {(
+                [
+                  ['organizers', 'I’m organizing'],
+                  ['sponsors', 'I’m sponsoring'],
+                ] as [Side, string][]
+              ).map(([value, label]) => (
+                <Pressable
+                  key={value}
+                  role="tab"
+                  aria-selected={side === value}
+                  onPress={() => setSide(value)}
+                  style={[styles.heroToggleItem, side === value && styles.heroToggleOn]}>
+                  <ThemedText type="smallStrong" style={styles.onPhoto}>
+                    {label}
+                  </ThemedText>
+                </Pressable>
+              ))}
             </View>
-          )}
+            <View {...motion({ search: '' })} style={styles.heroSearch}>
+              <TextInput
+                accessibilityLabel={side === 'organizers' ? 'Search sponsors' : 'Search events'}
+                placeholder={
+                  side === 'organizers'
+                    ? 'What does your event need? Cash, venue, cloud credits…'
+                    : 'What kind of events do you want to back?'
+                }
+                placeholderTextColor="#78716C"
+                value={q}
+                onChangeText={setQ}
+                onSubmitEditing={search}
+                returnKeyType="search"
+                style={styles.heroSearchInput}
+              />
+              <Pressable
+                {...motion({ press: 'primary' })}
+                role="button"
+                accessibilityLabel="Search"
+                onPress={search}
+                style={[styles.heroSearchButton, !wide && styles.heroSearchButtonNarrow]}>
+                <SymbolView name={{ ios: 'magnifyingglass', android: 'search', web: 'search' }} tintColor="#FFFFFF" size={20} />
+                {wide && <Text style={styles.heroSearchLabel}>Search</Text>}
+              </Pressable>
+            </View>
+            <View style={styles.heroChips}>
+              {HERO_CHIPS.map((category) => (
+                <Pressable
+                  key={category}
+                  {...motion({ press: 'secondary' })}
+                  role="link"
+                  onPress={() => router.push({ pathname: '/find', params: { kind: 'event', category } })}
+                  style={styles.heroChip}>
+                  <ThemedText type="small" style={styles.onPhoto}>
+                    {CATEGORY_LABELS[category]} →
+                  </ThemedText>
+                </Pressable>
+              ))}
+            </View>
+          </View>
         </View>
       </View>
     </View>
+  );
+}
+
+// Staff-edited announcements (/admin → Banner) in a soft gradient pill. Several rotate every 6 seconds, pausing
+// under the pointer; reduced motion shows only the first. No visible announcements: no bar.
+function AnnouncementBar() {
+  const theme = useTheme();
+  const wide = useIsWide(760);
+  const reduceMotion = useReducedMotion();
+  const [index, setIndex] = useState(0);
+  const [paused, setPaused] = useState(false);
+  const { data } = useQuery({
+    queryKey: ['announcements'],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('announcements');
+      if (error) throw error;
+      return data as { id: string; badge: string | null; message: string; link_label: string | null; link_url: string | null }[];
+    },
+  });
+  const count = data?.length ?? 0;
+  useEffect(() => {
+    if (count < 2 || reduceMotion || paused) return;
+    const timer = setInterval(() => setIndex((i) => i + 1), 6000);
+    return () => clearInterval(timer);
+  }, [count, reduceMotion, paused]);
+  if (!data || !count) return null;
+  const a = data[index % count];
+  const open = (url: string) => (/^https?:/.test(url) ? Linking.openURL(url) : router.push(url as Href));
+
+  return (
+    <Pressable
+      {...motion({ announce: '' })}
+      accessible={false}
+      onHoverIn={() => setPaused(true)}
+      onHoverOut={() => setPaused(false)}
+      style={styles.announce}>
+      <View key={a.id} {...motion(reduceMotion ? {} : { open: '' })} style={[styles.announceRow, !wide && styles.announceRowNarrow]}>
+        {a.badge && (
+          <View style={[styles.announceBadge, { backgroundColor: theme.text }]}>
+            <Text style={[styles.announceBadgeText, { color: theme.background }]}>{a.badge}</Text>
+          </View>
+        )}
+        <ThemedText numberOfLines={wide ? 1 : 2} style={wide ? styles.fill : styles.announceMessageNarrow}>
+          {a.message}
+        </ThemedText>
+        {a.link_url && (
+          <Pressable role="link" onPress={() => open(a.link_url!)} {...motion({ nav: '' })}>
+            <ThemedText type="smallStrong" style={styles.announceLink}>
+              {a.link_label} ›
+            </ThemedText>
+          </Pressable>
+        )}
+      </View>
+    </Pressable>
   );
 }
 
@@ -344,7 +439,9 @@ function BothSides() {
         </ThemedText>
       </View>
       <View style={[styles.bento, wide && styles.row]}>
-        <View style={[styles.bothCard, wide && { flex: 2 }, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}>
+        <View
+          {...motion({ card: '', spot: '' })}
+          style={[styles.bothCard, wide && { flex: 2 }, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}>
           <ThemedText type="caption" themeColor="textSecondary">
             EXAMPLE PROPOSALS
           </ThemedText>
@@ -428,6 +525,53 @@ function LogoInvite({ label }: { label: string }) {
   );
 }
 
+const MAP_POINTS: { title: string; body: string; icon: SymbolViewProps['name'] }[] = [
+  {
+    title: 'Post from anywhere in Korea',
+    body: 'All 17 regions, plus online events. Post once and sponsors can find you.',
+    icon: { ios: 'mappin.and.ellipse', android: 'location_on', web: 'location_on' },
+  },
+  {
+    title: 'Sponsors come to you',
+    body: 'Companies browse events that fit their audience and send proposals. No cold emails.',
+    icon: { ios: 'bolt', android: 'bolt', web: 'bolt' },
+  },
+  {
+    title: 'Deals you can track',
+    body: 'One chat per proposal, from the first message to Won and the results report.',
+    icon: { ios: 'hand.raised', android: 'handshake', web: 'handshake' },
+  },
+];
+
+// Cloudflare's globe section, for events: a live dot map of Korea (see EventMap) over a framed row of three points.
+function EventsAcrossKorea() {
+  const theme = useTheme();
+  const wide = useIsWide(900);
+  return (
+    <Section title="Events happening across Korea">
+      <ThemedText themeColor="textSecondary" style={styles.measure}>
+        Organizers post their events. Sponsors send proposals. Every connection starts here.
+      </ThemedText>
+      <View style={[styles.mapBox, !wide && styles.mapBoxNarrow]}>
+        <EventMap compact={!wide} />
+      </View>
+      <View {...motion(wide ? { frame: '' } : {})} style={[styles.points, wide && styles.row, { borderColor: theme.border }]}>
+        {MAP_POINTS.map((p, i) => (
+          <View
+            key={p.title}
+            style={[styles.pointCell, { borderColor: theme.border }, wide ? { borderLeftWidth: i ? 1 : 0 } : { borderTopWidth: i ? 1 : 0 }]}>
+            <SymbolView name={p.icon} tintColor={theme.link} size={24} />
+            <ThemedText type="subheading" level={3}>
+              {p.title}
+            </ThemedText>
+            <ThemedText themeColor="textSecondary">{p.body}</ThemedText>
+          </View>
+        ))}
+      </View>
+    </Section>
+  );
+}
+
 function EventTypes() {
   const theme = useTheme();
   const wide = useIsWide(760);
@@ -451,12 +595,12 @@ function EventTypes() {
         {PHOTO_TYPES.map((t, i) => (
           <Pressable
             key={t.category}
-            {...motion({ lift: '' })}
+            {...motion({ lift: '', photo: '' })}
             role="link"
             onPress={() => open(t.category)}
             style={[styles.photoTile, wide && { flex: i === 0 ? 1.4 : 1, height: 280 }]}>
             <Image source={t.image} accessibilityLabel={t.alt} style={StyleSheet.absoluteFill} contentFit="cover" />
-            <View style={styles.scrim} />
+            <View {...motion({ scrim: '' })} style={styles.scrim} />
             <ThemedText type="title" style={styles.onPhoto}>
               {CATEGORY_LABELS[t.category]}
             </ThemedText>
@@ -466,14 +610,20 @@ function EventTypes() {
           </Pressable>
         ))}
       </View>
-      <View style={styles.tiles}>
-        {ICON_TYPES.map((t) => (
+      {/* On wide screens the tiles join into one framed row with dividers and corner marks, like cloudflare.com. */}
+      <View {...motion(wide ? { frame: '' } : {})} style={[styles.tiles, wide && [styles.tilesFramed, { borderColor: theme.border }]]}>
+        {ICON_TYPES.map((t, i) => (
           <Pressable
             key={t.category}
-            {...motion({ lift: '' })}
+            {...motion(wide ? { press: 'secondary', spot: '' } : { lift: '', card: '', spot: '' })}
             role="link"
             onPress={() => open(t.category)}
-            style={[styles.iconTile, { backgroundColor: theme.backgroundElement }, wide && styles.iconTileWide]}>
+            style={[
+              styles.iconTile,
+              wide
+                ? [styles.iconTileWide, { borderColor: theme.border, borderLeftWidth: i ? 1 : 0 }]
+                : { backgroundColor: theme.backgroundElement },
+            ]}>
             <View style={[styles.iconBadge, { backgroundColor: theme.brandSoft }]}>
               <SymbolView name={t.icon} tintColor={theme.link} size={22} />
             </View>
@@ -490,8 +640,11 @@ function EventTypes() {
 
 function FeaturedPosts() {
   const wide = useIsWide(900);
-  const events = usePostSearch('', { kind: 'event', sort: 'recent' }, 'landing').data?.pages.flat() ?? [];
-  const sponsors = usePostSearch('', { kind: 'sponsor', sort: 'recent' }, 'landing').data?.pages.flat() ?? [];
+  const eventQuery = usePostSearch('', { kind: 'event', sort: 'recent' }, 'landing');
+  const sponsorQuery = usePostSearch('', { kind: 'sponsor', sort: 'recent' }, 'landing');
+  const events = eventQuery.data?.pages.flat() ?? [];
+  const sponsors = sponsorQuery.data?.pages.flat() ?? [];
+  if (eventQuery.isPending || sponsorQuery.isPending) return <PostSkeletons />;
   const lists = [
     { title: 'Events looking for sponsors', href: { pathname: '/find', params: { kind: 'event' } } as Href, posts: events },
     { title: 'Sponsors looking for events', href: '/sponsors' as Href, posts: sponsors },
@@ -680,7 +833,41 @@ function Faq() {
         <ThemedText themeColor="textSecondary">Can’t find your answer? Write to us.</ThemedText>
         <SeeAll href="/contact" label="Contact" />
       </View>
-      <View style={wide && styles.fill}>
+      {wide ? (
+        <View style={[styles.fill, styles.row, styles.faqPanes]}>
+          <View role="tablist" aria-orientation="vertical" style={styles.faqList}>
+            {FAQ.map((item) => {
+              const current = (open ?? FAQ[0].q) === item.q;
+              return (
+                <Pressable
+                  key={item.q}
+                  {...motion({ press: 'secondary' })}
+                  role="tab"
+                  aria-selected={current}
+                  onPress={() => setOpen(item.q)}
+                  style={[styles.faqTab, current && { backgroundColor: theme.backgroundElement }]}>
+                  <ThemedText type={current ? 'bodyStrong' : 'default'} themeColor={current ? 'text' : 'textSecondary'}>
+                    {item.q}
+                  </ThemedText>
+                </Pressable>
+              );
+            })}
+          </View>
+          {FAQ.filter((item) => (open ?? FAQ[0].q) === item.q).map((item) => (
+            <View
+              key={item.q}
+              {...motion({ open: '', card: '' })}
+              role="tabpanel"
+              style={[styles.faqAnswer, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}>
+              <ThemedText type="subheading" level={3}>
+                {item.q}
+              </ThemedText>
+              <ThemedText themeColor="textSecondary">{item.a}</ThemedText>
+            </View>
+          ))}
+        </View>
+      ) : (
+      <View>
         {FAQ.map((item) => {
           const expanded = open === item.q;
           return (
@@ -708,22 +895,32 @@ function Faq() {
           );
         })}
       </View>
+      )}
     </View>
   );
 }
 
+// A solid maple-red band with a white button and a text link.
 function FinalCta() {
   const theme = useTheme();
   return (
-    <View style={[styles.cta, { backgroundColor: theme.brandSoft }]}>
-      {/* Texture only: blurred and faint so the headline and both buttons stay readable. */}
-      <Image source={PHOTOS.cta} alt="" blurRadius={10} style={[StyleSheet.absoluteFill, styles.ctaPhoto]} contentFit="cover" />
-      <ThemedText type="title" level={2} style={[styles.center, styles.measure]}>
+    <View style={[styles.cta, { backgroundColor: theme.brand }]}>
+      <ThemedText type="title" level={2} style={[styles.center, styles.measure, styles.onBrand]}>
         Post your event once. Let sponsors come to you.
       </ThemedText>
       <View style={[styles.buttons, styles.centerRow]}>
-        <Button title="Post your event free" onPress={() => router.push('/posts/new')} />
-        <Button title="Find sponsors" variant="secondary" onPress={() => router.push('/sponsors')} />
+        <Pressable
+          {...motion({ press: 'primary' })}
+          role="button"
+          onPress={() => router.push('/posts/new')}
+          style={[styles.ctaButton, { backgroundColor: '#FFFFFF' }]}>
+          <Text style={[styles.ctaLabel, { color: theme.brand }]}>Post your event free</Text>
+        </Pressable>
+        <View style={styles.ctaLink}>
+          <Link href="/sponsors">
+            <Text style={[styles.ctaLabel, styles.onBrand]}>Find sponsors →</Text>
+          </Link>
+        </View>
       </View>
     </View>
   );
@@ -733,7 +930,7 @@ function StickyBar() {
   const theme = useTheme();
   const wide = useIsWide();
   return (
-    <View {...motion({ bar: '' })} style={[styles.sticky, { backgroundColor: theme.background, borderTopColor: theme.border }]}>
+    <View {...motion({ bar: '', glass: '' })} style={[styles.sticky, { backgroundColor: theme.background, borderTopColor: theme.border }]}>
       <View style={styles.stickyInner}>
         {wide && <ThemedText type="bodyStrong">Post your event once. Sponsors send you proposals.</ThemedText>}
         {/* Phones: two equal halves, with a shorter first label so both fit. */}
@@ -741,11 +938,66 @@ function StickyBar() {
           <View style={!wide && styles.fill}>
             <Button title={wide ? 'Post your event free' : 'Post free'} onPress={() => router.push('/posts/new')} />
           </View>
-          <View style={!wide && styles.fill}>
-            <Button title="Find sponsors" variant="secondary" onPress={() => router.push('/sponsors')} />
-          </View>
+          {wide ? (
+            <View {...motion({ nav: '' })} style={styles.stickyLink}>
+              <Link href="/sponsors">
+                <ThemedText type="bodyStrong" themeColor="link">
+                  Find sponsors →
+                </ThemedText>
+              </Link>
+            </View>
+          ) : (
+            <View style={styles.fill}>
+              <Button title="Find sponsors" variant="secondary" onPress={() => router.push('/sponsors')} />
+            </View>
+          )}
         </View>
       </View>
+    </View>
+  );
+}
+
+// Upwork-style ribbons in maple colors, sweeping behind a section's cards (website only, like the whole landing).
+// Placeholders shaped like two columns of post cards, shown while the featured posts load.
+function PostSkeletons() {
+  const theme = useTheme();
+  const wide = useIsWide(900);
+  return (
+    <Section>
+      <View aria-busy style={[styles.split, wide && styles.row]}>
+        {[0, 1].map((column) => (
+          <View key={column} style={[styles.fill, styles.listColumn]}>
+            <View {...motion({ skeleton: '' })} style={[styles.skeletonTitle, { backgroundColor: theme.backgroundElement }]} />
+            {[0, 1].map((row) => (
+              <View key={row} {...motion({ skeleton: '' })} style={[styles.skeletonCard, { backgroundColor: theme.backgroundElement }]} />
+            ))}
+          </View>
+        ))}
+      </View>
+    </Section>
+  );
+}
+
+function Swoosh() {
+  return (
+    <View style={styles.swoosh} aria-hidden>
+      <svg viewBox="0 0 1440 600" preserveAspectRatio="none" style={{ width: '100%', height: '100%', display: 'block' }}>
+        <defs>
+          <linearGradient id="maple-swoosh" x1="0" x2="1" y1="1" y2="0">
+            <stop offset="0" stopColor="#c8331b" />
+            <stop offset="0.55" stopColor="#e2482c" />
+            <stop offset="1" stopColor="#f4b95a" />
+          </linearGradient>
+        </defs>
+        <path
+          className="swoosh-soft"
+          d="M0,380 C320,380 560,210 860,160 S1260,60 1440,-20 L1440,210 C1250,280 1080,320 860,370 S330,600 0,640 Z"
+        />
+        <path
+          fill="url(#maple-swoosh)"
+          d="M0,500 C360,480 600,280 880,230 S1280,140 1440,70 L1440,250 C1290,300 1110,350 890,410 S400,650 0,670 Z"
+        />
+      </svg>
     </View>
   );
 }
@@ -760,10 +1012,24 @@ function SeeAll({ href, label = 'See all' }: { href: Href; label?: string }) {
   );
 }
 
-function Section({ children, title, tinted }: { children: ReactNode; title?: string; tinted?: boolean }) {
+function Section({
+  children,
+  title,
+  tinted,
+  swoosh,
+}: {
+  children: ReactNode;
+  title?: string;
+  tinted?: boolean;
+  swoosh?: boolean;
+}) {
   const theme = useTheme();
+  const wide = useIsWide(700);
   return (
-    <View style={[styles.section, tinted && { backgroundColor: theme.backgroundElement }]}>
+    <View
+      {...motion({ rule: '' })}
+      style={[styles.section, !wide && styles.sectionNarrow, tinted && { backgroundColor: theme.backgroundElement }]}>
+      {swoosh && <Swoosh />}
       <View {...motion({ reveal: '' })} style={styles.sectionInner}>
         {title && (
           <ThemedText type="title" level={2}>
@@ -783,32 +1049,77 @@ const styles = StyleSheet.create({
   centerRow: { justifyContent: 'center' },
   measure: { maxWidth: 620 },
   cover: { width: '100%', height: '100%' },
-  section: { paddingHorizontal: Spacing.four, paddingVertical: Spacing.six + Spacing.three },
+  section: { paddingHorizontal: Spacing.four, paddingTop: Spacing.six + Spacing.two, paddingBottom: Spacing.six + Spacing.four },
+  sectionNarrow: { paddingHorizontal: Spacing.three, paddingTop: Spacing.five + Spacing.two, paddingBottom: Spacing.six },
+  framed: { position: 'relative' },
+  rails: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, pointerEvents: 'none' },
+  skeletonTitle: { height: 36, width: '60%', borderRadius: 8 },
+  skeletonCard: { height: 132, borderRadius: 16 },
+  swoosh: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, overflow: 'hidden', pointerEvents: 'none' },
   sectionInner: { width: '100%', maxWidth: MaxContentWidth, alignSelf: 'center', gap: Spacing.five },
   stack: { gap: Spacing.six },
   listColumn: { gap: Spacing.three },
   listHead: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three, marginBottom: Spacing.one },
   buttons: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.three },
 
-  heroBand: { paddingHorizontal: Spacing.four, paddingTop: Spacing.six, paddingBottom: Spacing.six + Spacing.five },
-  hero: { gap: Spacing.six, alignItems: 'center' },
-  heroText: { gap: Spacing.four, alignSelf: 'stretch' },
-  heroTextWide: { flex: 1.15, alignSelf: 'center' },
+  heroBand: { paddingHorizontal: Spacing.three, paddingTop: Spacing.four, paddingBottom: Spacing.six },
+  heroStack: { gap: Spacing.four },
+  heroBox: { borderRadius: 24, overflow: 'hidden', minHeight: 560, justifyContent: 'center' },
+  heroBoxWide: { minHeight: 620 },
+  heroContent: { padding: Spacing.four, gap: Spacing.four, maxWidth: 760 },
+  heroContentWide: { paddingHorizontal: Spacing.six, paddingVertical: Spacing.five },
   heroTitle: { fontSize: 40, lineHeight: 44, fontWeight: 700, letterSpacing: -1.4 },
-  heroTitleWide: { fontSize: 50, lineHeight: 54, letterSpacing: -1.8 },
-  heroActions: { gap: Spacing.four },
-  heroSearch: { height: 52, borderRadius: 14, borderWidth: 1, paddingHorizontal: Spacing.four, fontSize: 16, maxWidth: 520 },
-  heroArt: { alignSelf: 'stretch' },
-  heroArtWide: { flex: 1 },
-  heroPhoto: { width: '100%', height: 280, borderRadius: 20 },
-  heroPhotoWide: { height: 520, borderRadius: 28 },
-  heroCard: {
-    marginTop: -56,
-    marginHorizontal: Spacing.three,
-    borderRadius: 16,
-    boxShadow: '0 24px 48px -24px rgba(60, 24, 12, 0.4)',
+  heroTitleWide: { fontSize: 62, lineHeight: 66, letterSpacing: -2.2 },
+  heroToggle: { flexDirection: 'row', gap: Spacing.two, marginTop: Spacing.three },
+  heroToggleItem: {
+    flex: 1,
+    maxWidth: 300,
+    minHeight: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 999,
+    borderWidth: 1.5,
+    borderColor: 'transparent',
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
   },
-  heroCardWide: { position: 'absolute', left: -56, bottom: -40, width: 380, marginTop: 0, marginHorizontal: 0 },
+  heroToggleOn: { borderColor: '#FFFFFF', backgroundColor: 'rgba(255, 255, 255, 0.16)' },
+  heroSearch: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    maxWidth: 620,
+    borderRadius: 999,
+    padding: 6,
+    paddingLeft: Spacing.four,
+    backgroundColor: '#FFFFFF',
+  },
+  heroSearchInput: { flex: 1, minWidth: 0, height: 44, fontSize: 16, color: INK },
+  heroSearchButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
+    minHeight: 44,
+    paddingHorizontal: Spacing.four,
+    borderRadius: 999,
+    backgroundColor: INK,
+  },
+  heroSearchButtonNarrow: { paddingHorizontal: Spacing.three, minWidth: 48, justifyContent: 'center' },
+  heroSearchLabel: { color: '#FFFFFF', fontFamily: Fonts.sans, fontSize: 16, fontWeight: 600 },
+  heroChips: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two },
+  heroChip: {
+    minHeight: 36,
+    justifyContent: 'center',
+    paddingHorizontal: Spacing.three,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.7)',
+  },
+  announce: { borderRadius: 16, paddingHorizontal: Spacing.four, paddingVertical: Spacing.three },
+  announceRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
+  announceRowNarrow: { flexWrap: 'wrap', rowGap: Spacing.one },
+  announceMessageNarrow: { flexGrow: 1, flexBasis: 200 },
+  announceBadge: { borderRadius: 3, paddingHorizontal: Spacing.two, paddingVertical: 2 },
+  announceBadgeText: { fontSize: 12, fontWeight: 700, letterSpacing: 0.5 },
+  announceLink: { textDecorationLine: 'underline' },
 
   logos: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start' },
   // Spacing is padding, not gap, so both halves of the strip are exactly the same width.
@@ -848,10 +1159,15 @@ const styles = StyleSheet.create({
     gap: Spacing.half,
   },
   scrim: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, backgroundColor: 'rgba(24, 12, 8, 0.42)' },
-  onPhoto: { color: '#FFFFFF' },
+  onPhoto: { color: '#FFFFFF', textShadowColor: 'rgba(0, 0, 0, 0.45)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 8 },
   tiles: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.three },
   iconTile: { flexGrow: 1, flexBasis: '45%', minHeight: 150, borderRadius: 20, padding: Spacing.four, gap: Spacing.two },
-  iconTileWide: { flexBasis: '22%' },
+  iconTileWide: { flexBasis: '22%', borderRadius: 0 },
+  tilesFramed: { gap: 0, borderWidth: 1 },
+  mapBox: { width: '100%', maxWidth: 1000, alignSelf: 'center' },
+  mapBoxNarrow: { maxWidth: 300 },
+  points: { borderWidth: 1 },
+  pointCell: { flex: 1, padding: Spacing.four, gap: Spacing.two },
   iconBadge: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
 
   split: { gap: Spacing.five },
@@ -897,6 +1213,10 @@ const styles = StyleSheet.create({
 
   faqIntro: { gap: Spacing.three },
   faqIntroWide: { width: 320 },
+  faqPanes: { gap: Spacing.four, alignItems: 'flex-start' },
+  faqList: { flex: 1, gap: Spacing.half },
+  faqTab: { minHeight: 48, justifyContent: 'center', paddingHorizontal: Spacing.three, paddingVertical: Spacing.two, borderRadius: 10 },
+  faqAnswer: { flex: 1.2, borderWidth: 1, borderRadius: 20, padding: Spacing.five, gap: Spacing.three },
   faqItem: { borderBottomWidth: 1, paddingVertical: Spacing.three, gap: Spacing.two },
   faqQuestion: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three, minHeight: 44 },
 
@@ -908,8 +1228,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: Spacing.four,
   },
-  ctaPhoto: { opacity: 0.09 },
+  ctaButton: { minHeight: 48, paddingHorizontal: Spacing.four, borderRadius: 999, justifyContent: 'center' },
+  ctaLink: { minHeight: 48, justifyContent: 'center', paddingHorizontal: Spacing.two },
+  ctaLabel: { fontFamily: Fonts.sans, fontSize: 16, fontWeight: 600 },
+  onBrand: { color: '#FFFFFF' },
 
+  stickyLink: { minHeight: 44, justifyContent: 'center', paddingHorizontal: Spacing.two },
   sticky: {
     position: 'absolute',
     left: 0,

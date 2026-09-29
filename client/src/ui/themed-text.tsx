@@ -27,13 +27,13 @@ const base = { fontFamily: Fonts.sans };
 // Large type is tighter (negative tracking) so headlines read as one shape.
 const styles = StyleSheet.create({
   display: { fontSize: 44, lineHeight: 50, fontWeight: 700, letterSpacing: -1.2 },
-  title: { fontSize: 32, lineHeight: 40, fontWeight: 700, letterSpacing: -0.7 },
+  title: { fontSize: 32, lineHeight: 38, fontWeight: 700, letterSpacing: -0.8 },
   heading: { fontSize: 20, lineHeight: 28, fontWeight: 600, letterSpacing: -0.2 },
   subheading: { fontSize: 18, lineHeight: 26, fontWeight: 600, letterSpacing: -0.1 },
   lead: { fontSize: 19, lineHeight: 30, fontWeight: 400 },
   default: { fontSize: 16, lineHeight: 24, fontWeight: 400 },
   bodyStrong: { fontSize: 16, lineHeight: 24, fontWeight: 600 },
-  small: { fontSize: 14, lineHeight: 20, fontWeight: 400 },
-  smallStrong: { fontSize: 14, lineHeight: 20, fontWeight: 600 },
+  small: { fontSize: 14, lineHeight: 20, fontWeight: 400, letterSpacing: 0.1 },
+  smallStrong: { fontSize: 14, lineHeight: 20, fontWeight: 600, letterSpacing: 0.1 },
   caption: { fontSize: 12, lineHeight: 16, fontWeight: 500, letterSpacing: 0.3 },
 });

@@ -14,7 +14,7 @@ type Props = {
   width?: keyof typeof WIDTHS;
 };
 
-const WIDTHS = { form: FormWidth, reading: ReadingWidth, page: 880, wide: MaxContentWidth };
+const WIDTHS = { form: FormWidth, reading: ReadingWidth, page: 1000, wide: MaxContentWidth };
 
 // A scrolling page with a centered column. Every product screen uses it.
 export function Screen({ title, children, width = 'reading' }: Props) {
@@ -26,7 +26,9 @@ export function Screen({ title, children, width = 'reading' }: Props) {
       keyboardShouldPersistTaps="handled">
       <Stack.Screen options={{ title }} />
       <PageMeta title={title} />
-      <View style={[styles.column, { maxWidth: WIDTHS[width] }]}>{children}</View>
+      <View nativeID="main" style={[styles.column, { maxWidth: WIDTHS[width] }]}>
+        {children}
+      </View>
     </ScrollView>
   );
 }

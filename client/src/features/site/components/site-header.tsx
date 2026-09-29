@@ -1,6 +1,6 @@
 import { Image } from 'expo-image';
 import { Link, router, type Href } from 'expo-router';
-import { SymbolView } from 'expo-symbols';
+import { SymbolView, type SymbolViewProps } from 'expo-symbols';
 import { useRef, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
@@ -15,11 +15,14 @@ import { ThemeMenu } from '@/ui/theme-menu';
 import { ThemedText } from '@/ui/themed-text';
 
 type NavLink = { label: string; href: Href };
+type Icon = SymbolViewProps['name'];
 
 // The footer's pages, grouped for the top bar like Upwork's (legal pages stay in the footer only).
-const MENUS: { title: string; links: NavLink[] }[] = [
+// Each top-level item has a small icon before its label, like Luma's navigation.
+const MENUS: { title: string; icon: Icon; links: NavLink[] }[] = [
   {
     title: 'For organizers',
+    icon: { ios: 'calendar', android: 'event', web: 'event' },
     links: [
       { label: 'Find sponsors', href: '/sponsors' },
       { label: 'Showcase', href: '/showcase' },
@@ -29,6 +32,7 @@ const MENUS: { title: string; links: NavLink[] }[] = [
   },
   {
     title: 'For sponsors',
+    icon: { ios: 'hand.raised', android: 'handshake', web: 'handshake' },
     links: [
       { label: 'Find events', href: { pathname: '/find', params: { kind: 'event' } } },
       { label: 'Post as a sponsor', href: { pathname: '/signup', params: { role: 'sponsor' } } },
@@ -37,15 +41,16 @@ const MENUS: { title: string; links: NavLink[] }[] = [
   },
   {
     title: 'Why Maple',
+    icon: { ios: 'safari', android: 'explore', web: 'explore' },
     links: [
       { label: 'About', href: '/about' },
       { label: 'Trust and safety', href: '/trust' },
     ],
   },
 ];
-const PAGES: NavLink[] = [
-  { label: 'Pricing', href: '/pricing' },
-  { label: 'Contact', href: '/contact' },
+const PAGES: (NavLink & { icon: Icon })[] = [
+  { label: 'Pricing', href: '/pricing', icon: { ios: 'tag', android: 'sell', web: 'sell' } },
+  { label: 'Contact', href: '/contact', icon: { ios: 'envelope', android: 'mail', web: 'mail' } },
 ];
 
 const CHEVRON = { ios: 'chevron.down', android: 'expand_more', web: 'expand_more' } as const;
@@ -63,16 +68,23 @@ export function SiteHeader() {
     setOpen(false);
     router.push(href);
   };
-  const link = (label: string, href: Href) => (
+  const link = (label: string, href: Href, icon?: Icon) => (
     <View key={label} {...motion({ nav: '' })}>
       <Link href={href} onPress={() => setOpen(false)}>
-        <ThemedText style={styles.link}>{label}</ThemedText>
+        <View style={styles.trigger}>
+          {icon && <SymbolView name={icon} tintColor={theme.textSecondary} size={18} />}
+          <ThemedText>{label}</ThemedText>
+        </View>
       </Link>
     </View>
   );
 
   return (
     <View style={[styles.bar, { backgroundColor: theme.background, borderBottomColor: theme.border }]}>
+      {/* Hidden until focused: lets keyboard users jump past the navigation (styled in global.css). */}
+      <a href="#main" data-skip="">
+        Skip to content
+      </a>
       <View style={styles.inner}>
         <Link href="/" asChild>
           <Pressable accessibilityLabel="Maple home" style={styles.brand}>
@@ -86,16 +98,17 @@ export function SiteHeader() {
               <NavMenu
                 key={m.title}
                 title={m.title}
+                icon={m.icon}
                 links={m.links}
                 open={menu === m.title}
                 onToggle={(show) => setMenu(show ? m.title : null)}
               />
             ))}
-            {PAGES.map((p) => link(p.label, p.href))}
+            {PAGES.map((p) => link(p.label, p.href, p.icon))}
           </View>
         )}
         <View style={styles.actions}>
-          <ThemeMenu />
+          {wide && <ThemeMenu />}
           {session ? (
             <Button title="Open Maple" onPress={() => go('/find')} />
           ) : (
@@ -132,6 +145,7 @@ export function SiteHeader() {
           ))}
           {PAGES.map((p) => link(p.label, p.href))}
           {!session && link('Sign in', '/login')}
+          <ThemeMenu />
         </View>
       )}
     </View>
@@ -141,11 +155,13 @@ export function SiteHeader() {
 // One section's dropdown: the title opens a menu of links; picking one, Escape, or a click outside closes it.
 function NavMenu({
   title,
+  icon,
   links,
   open,
   onToggle,
 }: {
   title: string;
+  icon: Icon;
   links: NavLink[];
   open: boolean;
   onToggle: (open: boolean) => void;
@@ -162,12 +178,13 @@ function NavMenu({
         aria-expanded={open}
         onPress={() => onToggle(!open)}
         style={styles.trigger}>
+        <SymbolView name={icon} tintColor={open ? theme.link : theme.textSecondary} size={18} />
         <ThemedText style={open && { color: theme.link }}>{title}</ThemedText>
         <SymbolView name={CHEVRON} tintColor={open ? theme.link : theme.textSecondary} size={16} />
       </Pressable>
       {open && (
         <View
-          {...motion({ open: '' })}
+          {...motion({ open: '', glass: '' })}
           role="menu"
           aria-label={title}
           style={[styles.dropdown, { backgroundColor: theme.background, borderColor: theme.border }]}>
@@ -199,8 +216,7 @@ const styles = StyleSheet.create({
   logo: { width: 32, height: 32 },
   wordmark: { fontSize: 22, lineHeight: 28, fontWeight: 700 },
   nav: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: Spacing.four + Spacing.one, marginLeft: Spacing.four },
-  link: { paddingVertical: Spacing.two },
-  trigger: { flexDirection: 'row', alignItems: 'center', gap: Spacing.half, paddingVertical: Spacing.two },
+  trigger: { flexDirection: 'row', alignItems: 'center', gap: Spacing.one + Spacing.half, paddingVertical: Spacing.two },
   dropdown: {
     position: 'absolute',
     top: 44,

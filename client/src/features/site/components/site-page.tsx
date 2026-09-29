@@ -33,7 +33,7 @@ export function SitePage({ title, description, path, lead, wide, image, imageAlt
     <ScrollView style={{ backgroundColor: theme.background }}>
       <Stack.Screen options={{ title }} />
       <PageMeta title={title} description={description} path={path} />
-      <View style={[styles.header, { backgroundColor: theme.backgroundElement }]}>
+      <View nativeID="main" style={[styles.header, { backgroundColor: theme.backgroundElement }]}>
         <View style={[styles.headerInner, { maxWidth: image || wide ? MaxContentWidth : ReadingWidth }, split && styles.row]}>
           <View {...motion({ enter: 0 })} style={[styles.headerText, split && styles.fill]}>
             <ThemedText type="display" level={1}>

@@ -19,18 +19,45 @@
   --lift-shadow: 0 14px 30px -14px rgba(120, 45, 20, 0.3);
   --nav-hover: #c8331b; /* theme.link */
   --drift: linear-gradient(120deg, #fbede8 0%, #f6c3ae 30%, #fdfcfa 55%, #f4d9a6 80%, #fbede8 100%);
+  --rail: rgba(28, 25, 23, 0.16); /* frame lines on the home page */
+  --page: #fdfcfa; /* theme.background, for the hollow corner marks */
+  --map-land: rgba(200, 51, 27, 0.3);
+  --map-text: #57534e;
+  --spot: rgba(200, 51, 27, 0.85); /* card border spotlight */
+  --edge-hi: rgba(255, 255, 255, 0.8); /* light catching a card's top edge */
+  --shade-1: rgba(120, 45, 20, 0.06);
+  --shade-2: rgba(120, 45, 20, 0.22);
+  --grain: 0.035;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) {
     --lift-shadow: 0 16px 34px -14px rgba(0, 0, 0, 0.7);
     --nav-hover: #ff8a5c;
-    --drift: linear-gradient(120deg, #2a1b17 0%, #4d2418 30%, #1e1c1b 55%, #3b2c15 80%, #2a1b17 100%);
+    --drift: linear-gradient(120deg, #2a1b17 0%, #4d2418 30%, #221a16 55%, #3b2c15 80%, #2a1b17 100%);
+    --rail: rgba(250, 250, 249, 0.14);
+    --page: #16110f;
+    --map-land: rgba(255, 138, 92, 0.4);
+    --map-text: #b5a9a1;
+    --spot: rgba(255, 138, 92, 0.85);
+    --edge-hi: rgba(255, 255, 255, 0.06);
+    --shade-1: rgba(0, 0, 0, 0.3);
+    --shade-2: rgba(0, 0, 0, 0.55);
+    --grain: 0.05;
   }
 }
 :root[data-theme='dark'] {
   --lift-shadow: 0 16px 34px -14px rgba(0, 0, 0, 0.7);
   --nav-hover: #ff8a5c;
-  --drift: linear-gradient(120deg, #2a1b17 0%, #4d2418 30%, #1e1c1b 55%, #3b2c15 80%, #2a1b17 100%);
+  --drift: linear-gradient(120deg, #2a1b17 0%, #4d2418 30%, #221a16 55%, #3b2c15 80%, #2a1b17 100%);
+  --rail: rgba(250, 250, 249, 0.14);
+  --page: #16110f;
+  --map-land: rgba(255, 138, 92, 0.4);
+  --map-text: #b5a9a1;
+  --spot: rgba(255, 138, 92, 0.85);
+  --edge-hi: rgba(255, 255, 255, 0.06);
+  --shade-1: rgba(0, 0, 0, 0.3);
+  --shade-2: rgba(0, 0, 0, 0.55);
+  --grain: 0.05;
 }
 
 /* Website header links and menu titles take the link color on hover. */
@@ -78,7 +105,8 @@ textarea[dir='auto'] {
   }
 }
 [data-press]:active {
-  transform: scale(0.98);
+  transform: scale(0.97);
+  transition-duration: 100ms;
 }
 [data-press]:focus-visible,
 [data-lift]:focus-visible {
@@ -110,6 +138,38 @@ textarea[dir='auto'] {
   to {
     transform: translateX(-50%);
   }
+}
+
+/* Home announcement bar: a soft maple-red to cream wash (darker in dark mode). */
+[data-announce] {
+  background-image: linear-gradient(90deg, #fbede8 0%, #fdf3e6 55%, #f3ece4 100%);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) [data-announce] {
+    background-image: linear-gradient(90deg, #2a1b17 0%, #2a2219 55%, #221a16 100%);
+  }
+}
+:root[data-theme='dark'] [data-announce] {
+  background-image: linear-gradient(90deg, #2a1b17 0%, #2a2219 55%, #221a16 100%);
+}
+/* Home hero photo: shaded only behind the white text on the left; the right half of the photo stays clear. */
+[data-shade] {
+  background-image: linear-gradient(90deg, rgba(20, 10, 6, 0.66) 0%, rgba(20, 10, 6, 0.4) 40%, rgba(20, 10, 6, 0) 75%);
+}
+/* Phones: the text spans the whole photo, so shade it evenly, darkest behind the lower half. */
+@media (max-width: 700px) {
+  [data-shade] {
+    background-image: linear-gradient(180deg, rgba(20, 10, 6, 0.55) 0%, rgba(20, 10, 6, 0.62) 45%, rgba(20, 10, 6, 0.82) 100%);
+  }
+}
+/* Photo cards: shaded only along the bottom, under the label (replaces the flat tint set in the app styles). */
+[data-scrim] {
+  background-color: transparent !important;
+  background-image: linear-gradient(to top, rgba(20, 10, 6, 0.72) 0%, rgba(20, 10, 6, 0.25) 45%, rgba(20, 10, 6, 0) 70%);
+}
+/* Website photos: a little more color and contrast so they read bright, not washed out. */
+[data-photo] img {
+  filter: saturate(1.15) contrast(1.05);
 }
 
 /* A soft maple-red light in the corner of the home hero. */
@@ -170,7 +230,7 @@ textarea[dir='auto'] {
 @keyframes maple-open {
   from {
     opacity: 0;
-    transform: translateY(-6px);
+    transform: translateY(-4px) scale(0.97);
   }
   to {
     opacity: 1;
@@ -241,5 +301,321 @@ textarea[dir='auto'] {
   }
   [data-turn] {
     transition: transform 220ms var(--ease-out);
+  }
+}
+
+/* Home hero search: no box around the text field; the whole pill gets a maple-red ring while you type in it. */
+[data-search] input {
+  outline: none;
+}
+[data-search]:focus-within {
+  outline: 3px solid var(--nav-hover);
+  outline-offset: 3px;
+}
+
+/*
+ * Cloudflare-style framing on the home page, on screens wide enough to have margins (1400px+):
+ * dashed rails 24px outside the 1280px content, a line along the top of each section with hollow square marks
+ * where it meets the rails, and corner marks on framed rows.
+ */
+[data-rail-lines],
+[data-rule]::before,
+[data-rule]::after,
+[data-frame]::before {
+  display: none;
+}
+@media (min-width: 1400px) {
+  /* The dashed rails. */
+  [data-rail-lines] {
+    display: block;
+    background:
+      repeating-linear-gradient(to bottom, var(--rail) 0 6px, transparent 6px 12px) calc(50% - 664px) 0 / 1px 100% no-repeat,
+      repeating-linear-gradient(to bottom, var(--rail) 0 6px, transparent 6px 12px) calc(50% + 664px) 0 / 1px 100% no-repeat;
+  }
+  [data-rule] {
+    position: relative;
+  }
+  [data-rule]::before {
+    display: block;
+    content: '';
+    position: absolute;
+    top: 0;
+    left: calc(50% - 664px);
+    right: calc(50% - 664px);
+    border-top: 1px solid var(--rail);
+    pointer-events: none;
+  }
+  [data-rule]::after,
+  [data-frame]::before {
+    display: block;
+    content: '';
+    position: absolute;
+    pointer-events: none;
+    /* Hollow squares: a 9px rail-colored square with a 7px page-colored one inside, at each end. */
+    background:
+      linear-gradient(var(--page), var(--page)) 1px 1px / 7px 7px no-repeat,
+      linear-gradient(var(--page), var(--page)) calc(100% - 1px) 1px / 7px 7px no-repeat,
+      linear-gradient(var(--rail), var(--rail)) 0 0 / 9px 9px no-repeat,
+      linear-gradient(var(--rail), var(--rail)) 100% 0 / 9px 9px no-repeat;
+  }
+  [data-rule]::after {
+    top: -4px;
+    height: 9px;
+    left: calc(50% - 668px);
+    right: calc(50% - 668px);
+  }
+  [data-frame] {
+    position: relative;
+  }
+  [data-frame]::before {
+    inset: -5px;
+    background:
+      linear-gradient(var(--page), var(--page)) 1px 1px / 7px 7px no-repeat,
+      linear-gradient(var(--page), var(--page)) calc(100% - 1px) 1px / 7px 7px no-repeat,
+      linear-gradient(var(--page), var(--page)) 1px calc(100% - 1px) / 7px 7px no-repeat,
+      linear-gradient(var(--page), var(--page)) calc(100% - 1px) calc(100% - 1px) / 7px 7px no-repeat,
+      linear-gradient(var(--rail), var(--rail)) 0 0 / 9px 9px no-repeat,
+      linear-gradient(var(--rail), var(--rail)) 100% 0 / 9px 9px no-repeat,
+      linear-gradient(var(--rail), var(--rail)) 0 100% / 9px 9px no-repeat,
+      linear-gradient(var(--rail), var(--rail)) 100% 100% / 9px 9px no-repeat;
+  }
+}
+
+/* Home "Events happening across Korea" map (src/features/site/components/event-map.tsx). */
+[data-map] .land circle {
+  fill: var(--map-land);
+}
+[data-map] .trail path {
+  fill: none;
+  stroke: var(--map-land);
+  stroke-width: 1.5;
+  stroke-dasharray: 4 6;
+}
+[data-map] .arc {
+  fill: none;
+  stroke: url(#maple-arc);
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-dasharray: 1;
+}
+[data-map] .pin .dot {
+  fill: var(--nav-hover);
+}
+[data-map] .pin.on .dot {
+  fill: #f4b95a;
+}
+[data-map] .pin .ring {
+  fill: var(--nav-hover);
+  opacity: 0.18;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+[data-map] .sponsor rect {
+  fill: var(--page);
+  stroke: var(--rail);
+}
+[data-map] .sponsor text,
+[data-map] .chip text {
+  font: 600 13px var(--font-display);
+}
+[data-map] .sponsor text {
+  fill: var(--map-text);
+}
+[data-map] .sponsor.on rect {
+  stroke: var(--nav-hover);
+  stroke-width: 1.5;
+}
+[data-map] .sponsor.on text {
+  fill: var(--nav-hover);
+}
+[data-map] .chip rect {
+  fill: var(--nav-hover);
+}
+[data-map] .chip text {
+  fill: #fff;
+}
+@keyframes maple-draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes maple-ping {
+  from {
+    transform: scale(1);
+    opacity: 0.35;
+  }
+  to {
+    transform: scale(2.4);
+    opacity: 0;
+  }
+}
+@keyframes maple-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  [data-map] .arc {
+    animation: maple-draw 900ms var(--ease-out) both;
+  }
+  [data-map] .pin .ring {
+    animation: maple-ping 2.4s ease-out infinite;
+  }
+  [data-map] .pin.on .ring {
+    animation-duration: 1.2s;
+  }
+  [data-map] .chip {
+    animation: maple-fade 300ms 600ms both;
+  }
+  [data-map] .sponsor rect {
+    transition: stroke 300ms;
+  }
+}
+
+/* Home swoosh ribbons (Swoosh in home-screen.tsx): a soft amber wash behind the maple-red ribbon. */
+.swoosh-soft {
+  fill: rgba(244, 185, 90, 0.28);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .swoosh-soft {
+    fill: rgba(244, 185, 90, 0.14);
+  }
+}
+:root[data-theme='dark'] .swoosh-soft {
+  fill: rgba(244, 185, 90, 0.14);
+}
+
+/*
+ * Premium polish (redesign + apple-design skills): balanced headlines, steady digits, card surfaces with a lit top
+ * edge and warm shadows, a border spotlight under the cursor, faint film grain, and frosted glass on floating layers.
+ */
+html {
+  font-variant-numeric: tabular-nums;
+}
+h1,
+h2,
+h3 {
+  text-wrap: balance;
+}
+div[dir='auto'] {
+  text-wrap: pretty;
+}
+/* Home: bigger section titles, tighter as they grow. */
+[data-home] h2 {
+  font-size: clamp(32px, 3vw, 44px) !important;
+  line-height: 1.08 !important;
+  letter-spacing: -0.03em !important;
+}
+[data-open] {
+  transform-origin: top left;
+}
+[data-card] {
+  box-shadow:
+    inset 0 1px 0 var(--edge-hi),
+    0 1px 2px var(--shade-1),
+    0 16px 36px -24px var(--shade-2);
+}
+@media (hover: hover) {
+  [data-spot]::after {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    padding: 1px;
+    pointer-events: none;
+    background: radial-gradient(260px circle at var(--sx, 50%) var(--sy, 50%), var(--spot), transparent 70%);
+    -webkit-mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    opacity: 0;
+    transition: opacity 250ms var(--ease-out);
+  }
+  [data-spot]:hover::after {
+    opacity: 1;
+  }
+}
+/* Film grain: fixed, faint, never in the way. */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 2147483000;
+  pointer-events: none;
+  opacity: var(--grain);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+/* Frosted glass on layers that float over the page: menus and the bottom bar. */
+[data-glass] {
+  background-color: color-mix(in srgb, var(--page) 74%, transparent) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(20px) saturate(180%);
+}
+@media (prefers-reduced-transparency: reduce) {
+  [data-glass] {
+    background-color: var(--page) !important;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  body::after {
+    display: none;
+  }
+}
+@media (prefers-contrast: more) {
+  [data-card] {
+    box-shadow: none;
+  }
+  [data-glass] {
+    background-color: var(--page) !important;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  body::after {
+    display: none;
+  }
+}
+
+/* Skip link (site header): hidden above the page until a keyboard user focuses it. */
+[data-skip] {
+  position: absolute;
+  left: 16px;
+  top: -64px;
+  z-index: 30;
+  padding: 10px 16px;
+  border-radius: 10px;
+  background: var(--nav-hover);
+  color: #fff;
+  font: 600 15px var(--font-display);
+  text-decoration: none;
+  transition: top 150ms var(--ease-out);
+}
+[data-skip]:focus {
+  top: 8px;
+}
+/* Loading placeholders: a soft sheen sweeping across (a gentle pulse for reduced motion). */
+[data-skeleton] {
+  overflow: hidden;
+  position: relative;
+}
+@media (prefers-reduced-motion: no-preference) {
+  [data-skeleton]::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.08), transparent);
+    animation: maple-sheen 1.4s ease-in-out infinite;
+  }
+}
+@keyframes maple-sheen {
+  to {
+    transform: translateX(100%);
   }
 }

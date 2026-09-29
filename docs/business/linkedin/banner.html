@@ -1,0 +1,153 @@
+<!doctype html>
+<!--
+  Maple LinkedIn banners. Open with ?v=photo|deals&s=personal|company, then export at that size
+  (headless Chrome, --window-size = banner size). Personal = profile banner 1584×396; company = page cover 1128×191.
+  LinkedIn puts the profile photo / page logo over the bottom-left, so text sits in the middle and right.
+-->
+<html>
+<head>
+<meta charset="utf-8" />
+<style>
+  @font-face {
+    font-family: 'Geist';
+    src: url('../../../client/public/fonts/geist-latin-wght.woff2') format('woff2');
+    font-weight: 100 900;
+  }
+  :root {
+    --red: #c8331b;
+    --ink: #1c1917;
+    --cream: #fdfcfa;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  html, body { background: #fff; overflow: hidden; }
+  body { font-family: Geist, system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  .banner { position: relative; overflow: hidden; }
+  .personal { width: 1584px; height: 396px; }
+  .company { width: 1128px; height: 191px; }
+
+  .brand { display: flex; align-items: center; gap: 12px; font-weight: 700; letter-spacing: -0.02em; }
+  .brand img { display: block; }
+  .url { font-weight: 600; }
+  .pill {
+    display: inline-flex; align-items: center; gap: 8px; border-radius: 999px; font-weight: 600;
+    padding: 10px 20px; background: #fff; color: var(--ink);
+  }
+  .pill .url { color: var(--red); }
+
+  /* ---------- Direction 1: photo ---------- */
+  .photo { background: var(--red); color: #fff; }
+  .photo .pic {
+    position: absolute; top: 0; right: 0; bottom: 0; width: 64%;
+    background: url('../../../client/assets/images/site/habsida-group.webp') center 58% / cover no-repeat;
+  }
+  .photo .pic::after {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(90deg, var(--red) 0%, var(--red) 16%, rgba(200, 51, 27, 0.78) 34%, rgba(200, 51, 27, 0.3) 56%, rgba(200, 51, 27, 0) 74%);
+  }
+  .photo .copy { position: absolute; display: flex; flex-direction: column; }
+  .personal.photo .copy { left: 440px; top: 50px; width: 620px; gap: 18px; }
+  .personal.photo .brand { font-size: 30px; }
+  .personal.photo .brand img { width: 40px; height: 40px; }
+  .personal.photo h1 { font-size: 50px; line-height: 1.02; letter-spacing: -0.035em; font-weight: 800; }
+  .personal.photo p { font-size: 20px; opacity: 0.92; }
+  .personal.photo .pill { font-size: 18px; align-self: flex-start; }
+  .company.photo .copy { left: 250px; top: 26px; width: 470px; gap: 10px; }
+  .company.photo .brand { font-size: 20px; }
+  .company.photo .brand img { width: 26px; height: 26px; }
+  .company.photo h1 { font-size: 30px; line-height: 1.02; letter-spacing: -0.03em; font-weight: 800; }
+  .company.photo p { font-size: 14px; opacity: 0.92; }
+  .photo .tag {
+    position: absolute; right: 24px; bottom: 20px; font-size: 14px; font-weight: 600;
+    background: rgba(20, 10, 6, 0.55); padding: 6px 12px; border-radius: 999px;
+  }
+  .company.photo .tag { font-size: 11px; right: 14px; bottom: 12px; padding: 4px 10px; }
+
+  /* ---------- Direction 2: deal cards ---------- */
+  .deals {
+    color: var(--ink);
+    background:
+      radial-gradient(60% 120% at 100% 0%, rgba(200, 51, 27, 0.16), transparent 70%),
+      radial-gradient(40% 90% at 70% 110%, rgba(244, 185, 90, 0.22), transparent 70%),
+      var(--cream);
+  }
+  .deals .copy { position: absolute; display: flex; flex-direction: column; }
+  .deals h1 { font-weight: 800; letter-spacing: -0.035em; line-height: 1.02; }
+  .deals h1 em { font-style: normal; color: var(--red); }
+  .deals p { color: #57534e; }
+  .deals .url { color: var(--red); }
+  .personal.deals .copy { left: 440px; top: 54px; width: 640px; gap: 16px; }
+  .personal.deals .brand { font-size: 30px; }
+  .personal.deals .brand img { width: 40px; height: 40px; }
+  .personal.deals h1 { font-size: 50px; }
+  .personal.deals p { font-size: 20px; }
+  .company.deals .copy { left: 250px; top: 28px; width: 420px; gap: 10px; }
+  .company.deals .brand { font-size: 20px; }
+  .company.deals .brand img { width: 26px; height: 26px; }
+  .company.deals h1 { font-size: 30px; }
+  .company.deals p { font-size: 14px; }
+
+  .cards { position: absolute; display: flex; flex-direction: column; }
+  .personal .cards { right: 64px; top: 46px; width: 440px; gap: 14px; }
+  .company .cards { right: 36px; top: 16px; width: 440px; gap: 14px; transform: scale(0.52); transform-origin: top right; }
+  .card {
+    display: flex; align-items: center; gap: 14px; background: #fff; border: 1px solid #e7e0d9;
+    border-radius: 18px; padding: 14px 18px; box-shadow: 0 14px 30px -18px rgba(120, 45, 20, 0.45);
+  }
+  .card:nth-child(2) { margin-left: 36px; margin-right: -36px; }
+  .card:nth-child(3) { margin-left: 12px; margin-right: -12px; }
+  .avatar {
+    width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center;
+    color: #fff; font-weight: 800; font-size: 18px; flex: none;
+  }
+  .card .who { flex: 1; min-width: 0; }
+  .card b { display: block; font-size: 17px; letter-spacing: -0.01em; }
+  .card small { display: block; font-size: 14px; color: #57534e; margin-top: 2px; }
+  .status { font-size: 13px; font-weight: 700; padding: 6px 12px; border-radius: 999px; white-space: nowrap; }
+  .s-new { background: #dbeafe; color: #1d4ed8; }
+  .s-talk { background: #fef3c7; color: #b45309; }
+  .s-won { background: #dcfce7; color: #15803d; }
+</style>
+</head>
+<body>
+<script>
+  const q = new URLSearchParams(location.search);
+  const v = q.get('v') || 'photo';
+  const s = q.get('s') || 'personal';
+  const brand = `<div class="brand"><img src="../../../client/assets/images/logo.png" alt="">Maple</div>`;
+  const html = {
+    photo: `
+      <div class="banner ${s} photo">
+        <div class="pic"></div>
+        <div class="copy">
+          ${brand}
+          <h1>Post your event once.<br>Sponsors send you proposals.</h1>
+          ${s === 'personal'
+            ? `<p>The sponsorship marketplace for event organizers and the companies that back them, starting in Korea.</p>
+               <span class="pill">Free to join · <span class="url">mapleapp.tech</span></span>`
+            : `<p>Sponsorship marketplace for events in Korea · <span class="url">mapleapp.tech</span></p>`}
+        </div>
+        <div class="tag">HABSIDA Hackathon</div>
+      </div>`,
+    deals: `
+      <div class="banner ${s} deals">
+        <div class="copy">
+          ${brand}
+          <h1>Sponsors for your event,<br><em>without the cold emails.</em></h1>
+          ${s === 'personal'
+            ? `<p>Post your hackathon, conference or meetup once. Companies send you proposals. Free to join at <span class="url">mapleapp.tech</span></p>`
+            : `<p>Event sponsorship marketplace in Korea · <span class="url">mapleapp.tech</span></p>`}
+        </div>
+        <div class="cards">
+          <div class="card"><div class="avatar" style="background:#1d4ed8">N</div>
+            <div class="who"><b>Nuri Labs</b><small>Gold package · ₩3,000,000</small></div><span class="status s-won">✓ Won</span></div>
+          <div class="card"><div class="avatar" style="background:#b45309">H</div>
+            <div class="who"><b>Hanbit Coffee</b><small>Coffee for 120 people</small></div><span class="status s-talk">In talks</span></div>
+          <div class="card"><div class="avatar" style="background:#15803d">D</div>
+            <div class="who"><b>Daon Cloud</b><small>Cloud credits · ₩1,500,000</small></div><span class="status s-new">New</span></div>
+        </div>
+      </div>`,
+  };
+  document.body.innerHTML = html[v];
+</script>
+</body>
+</html>

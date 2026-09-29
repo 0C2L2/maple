@@ -23,7 +23,7 @@ import { TabStrip } from '@/ui/tab-strip';
 import { TextField } from '@/ui/text-field';
 import { ThemedText } from '@/ui/themed-text';
 
-type Tab = 'reports' | 'inbox' | 'orgs' | 'posts' | 'finance' | 'logos' | 'broadcast' | 'log';
+type Tab = 'reports' | 'inbox' | 'orgs' | 'posts' | 'finance' | 'logos' | 'banner' | 'broadcast' | 'log';
 const TABS = [
   { value: 'reports' as const, label: 'Reports' },
   { value: 'inbox' as const, label: 'Inbox' },
@@ -31,6 +31,7 @@ const TABS = [
   { value: 'posts' as const, label: 'Posts' },
   { value: 'finance' as const, label: 'Finance' },
   { value: 'logos' as const, label: 'Logos' },
+  { value: 'banner' as const, label: 'Banner' },
   { value: 'broadcast' as const, label: 'Broadcast' },
   { value: 'log' as const, label: 'Log' },
 ];
@@ -51,6 +52,11 @@ const ACTION_LABELS: Record<string, string> = {
   hide_logo: 'Hid a logo from the home strip',
   show_logo: 'Showed a logo in the home strip',
   delete_logo: 'Deleted a logo from the home strip',
+  add_announcement: 'Added an announcement',
+  hide_announcement: 'Hid an announcement',
+  show_announcement: 'Showed an announcement',
+  delete_announcement: 'Deleted an announcement',
+  edit_announcement: 'Edited an announcement',
 };
 
 const AUDIENCES = [
@@ -91,6 +97,7 @@ export default function AdminScreen() {
       {tab === 'broadcast' && <BroadcastTab />}
       {tab === 'finance' && <FinanceTab />}
       {tab === 'logos' && <LogosTab />}
+      {tab === 'banner' && <BannerTab />}
       {tab === 'log' && <LogTab />}
     </Screen>
   );
@@ -769,6 +776,160 @@ function LogosTab() {
             </View>
           </Card>
         ))
+      )}
+    </>
+  );
+}
+
+type Announcement = {
+  id: string;
+  badge: string | null;
+  message: string;
+  link_label: string | null;
+  link_url: string | null;
+  hidden: boolean;
+};
+
+// The announcement bar above the home page hero. Visible announcements rotate in this order.
+function BannerTab() {
+  const queryClient = useQueryClient();
+  const { run, confirming, error } = useAdminAction();
+  const [badge, setBadge] = useState('NEW');
+  const [message, setMessage] = useState('');
+  const [linkLabel, setLinkLabel] = useState('');
+  const [linkUrl, setLinkUrl] = useState('');
+  const [formError, setFormError] = useState<string>();
+  const [busy, setBusy] = useState(false);
+  const [editing, setEditing] = useState<string>();
+  const { data, isPending } = useQuery({
+    queryKey: ['admin', 'announcements'],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('admin_announcements');
+      if (error) throw error;
+      return data as Announcement[];
+    },
+  });
+
+  // Adds a new announcement, or saves the one being edited.
+  const save = async () => {
+    setBusy(true);
+    const fields = {
+      badge: badge.trim() || null,
+      message,
+      link_label: linkLabel.trim() || null,
+      link_url: linkUrl.trim() || null,
+    };
+    const { error } = editing
+      ? await supabase.rpc('admin_update_announcement', { item: editing, ...fields })
+      : await supabase.rpc('admin_add_announcement', fields);
+    setBusy(false);
+    if (error) return setFormError(errorMessage(error));
+    fill();
+    queryClient.invalidateQueries({ queryKey: ['admin'] });
+    queryClient.invalidateQueries({ queryKey: ['announcements'] });
+  };
+
+  // Loads an announcement into the form to edit it, or with no argument empties the form for a new one.
+  const fill = (a?: Announcement) => {
+    setEditing(a?.id);
+    setBadge(a ? (a.badge ?? '') : 'NEW');
+    setMessage(a?.message ?? '');
+    setLinkLabel(a?.link_label ?? '');
+    setLinkUrl(a?.link_url ?? '');
+    setFormError(undefined);
+  };
+
+  const form = (
+    <>
+      <ThemedText type="subheading">{editing ? 'Edit announcement' : 'Add an announcement'}</ThemedText>
+      <TextField
+        label="Badge (optional)"
+        placeholder="NEW, EVENT, HIRING"
+        value={badge}
+        onChangeText={setBadge}
+        maxLength={12}
+        autoCapitalize="characters"
+      />
+      <TextField label={`Message (${message.length}/90)`} value={message} onChangeText={setMessage} maxLength={90} />
+      <TextField
+        label="Link text (optional)"
+        placeholder="See the event"
+        value={linkLabel}
+        onChangeText={setLinkLabel}
+        maxLength={40}
+      />
+      <TextField
+        label="Link (optional)"
+        placeholder="https://… or /posts/…"
+        value={linkUrl}
+        onChangeText={setLinkUrl}
+        autoCapitalize="none"
+        maxLength={300}
+      />
+      <ErrorLine error={formError} />
+      <View style={styles.actions}>
+        <Button
+          title={busy ? 'Saving…' : editing ? 'Save changes' : 'Add announcement'}
+          onPress={save}
+          disabled={busy}
+        />
+        {editing ? <Button title="Cancel" variant="secondary" onPress={() => fill()} /> : null}
+      </View>
+    </>
+  );
+
+  return (
+    <>
+      <ThemedText themeColor="textSecondary">
+        The bar above the home page hero. Visible announcements take turns every few seconds, in this order. Hide them
+        all and the bar disappears.
+      </ThemedText>
+      {editing ? null : <Card>{form}</Card>}
+      <ErrorLine error={error} />
+      {isPending ? (
+        <Loading />
+      ) : !data?.length ? (
+        <Notice title="No announcements" body="The bar is hidden until you add one." />
+      ) : (
+        data.map((a, i) =>
+          editing === a.id ? (
+            <Card key={a.id}>{form}</Card>
+          ) : (
+            <Card key={a.id}>
+              <ThemedText type="bodyStrong">
+                {i + 1}. {a.badge ? `${a.badge} · ` : ''}
+                {a.message}
+              </ThemedText>
+              <ThemedText type="small" themeColor="textSecondary">
+                {a.link_url ? `${a.link_label} → ${a.link_url}` : 'No link'}
+                {a.hidden ? ' · HIDDEN' : ''}
+              </ThemedText>
+              <View style={styles.actions}>
+                <Button title="Edit" variant="secondary" onPress={() => fill(a)} />
+                <Button
+                  title="↑"
+                  variant="secondary"
+                  onPress={() => run(`u${a.id}`, 'admin_move_announcement', { item: a.id, step: -1 })}
+                />
+                <Button
+                  title="↓"
+                  variant="secondary"
+                  onPress={() => run(`d${a.id}`, 'admin_move_announcement', { item: a.id, step: 1 })}
+                />
+                <Button
+                  title={a.hidden ? 'Show' : 'Hide'}
+                  variant="secondary"
+                  onPress={() => run(`h${a.id}`, 'admin_set_announcement_hidden', { item: a.id, hide: !a.hidden })}
+                />
+                <Button
+                  title={confirming === `x${a.id}` ? 'Press again to delete' : 'Delete'}
+                  variant="secondary"
+                  onPress={() => run(`x${a.id}`, 'admin_delete_announcement', { item: a.id }, true)}
+                />
+              </View>
+            </Card>
+          ),
+        )
       )}
     </>
   );

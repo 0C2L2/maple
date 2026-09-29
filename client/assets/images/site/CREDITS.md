@@ -11,7 +11,6 @@ needed), saved here so the site doesn't hotlink. Resized to webp.
 | sponsor.webp | [Handshake](https://unsplash.com/photos/n95VMLxqM2I) | Cytonn Photography |
 | plan.webp | [Planning at a laptop](https://unsplash.com/photos/5fNmWej4tAA) | Scott Graham |
 | talk.webp | [Team at a laptop](https://unsplash.com/photos/QckxruozjRg) | Annie Spratt |
-| cta.webp | [Talk in front of a screen](https://unsplash.com/photos/bzdhc5b3Bxs) | Teemu Paananen |
 
 Our own photos from the HABSIDA Hackathon (Incheon, September 2026), supplied by the Maple team:
 
