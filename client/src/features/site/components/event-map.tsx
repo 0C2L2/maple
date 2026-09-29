@@ -19,13 +19,53 @@ const py = (lat: number) => 26 + (38.7 - lat) * K;
 // A simplified outline of mainland South Korea, clockwise from Ganghwa: the DMZ, the straight east coast, the
 // jagged south coast, and the west coast with the Taean peninsula. Jeju is an ellipse.
 const MAINLAND: [number, number][] = [
-  [126.1, 37.75], [126.55, 37.78], [126.68, 37.95], [127.05, 38.1], [127.3, 38.3], [127.75, 38.32], [128.1, 38.33],
-  [128.37, 38.62], [128.55, 38.3], [128.72, 38.05], [128.95, 37.75], [129.1, 37.55], [129.35, 37.25], [129.42, 36.95],
-  [129.42, 36.55], [129.4, 36.3], [129.57, 36.07], [129.45, 35.85], [129.45, 35.55], [129.3, 35.33], [129.1, 35.1],
-  [128.85, 35.05], [128.6, 34.88], [128.4, 34.83], [128.05, 34.9], [127.85, 34.72], [127.6, 34.72], [127.4, 34.6],
-  [127.1, 34.55], [126.9, 34.4], [126.55, 34.3], [126.3, 34.45], [126.35, 34.75], [126.3, 35.0], [126.45, 35.25],
-  [126.4, 35.55], [126.6, 35.85], [126.55, 36.05], [126.5, 36.35], [126.2, 36.6], [126.15, 36.85], [126.4, 36.95],
-  [126.55, 37.0], [126.8, 37.05], [126.7, 37.25], [126.6, 37.45], [126.4, 37.55],
+  [126.1, 37.75],
+  [126.55, 37.78],
+  [126.68, 37.95],
+  [127.05, 38.1],
+  [127.3, 38.3],
+  [127.75, 38.32],
+  [128.1, 38.33],
+  [128.37, 38.62],
+  [128.55, 38.3],
+  [128.72, 38.05],
+  [128.95, 37.75],
+  [129.1, 37.55],
+  [129.35, 37.25],
+  [129.42, 36.95],
+  [129.42, 36.55],
+  [129.4, 36.3],
+  [129.57, 36.07],
+  [129.45, 35.85],
+  [129.45, 35.55],
+  [129.3, 35.33],
+  [129.1, 35.1],
+  [128.85, 35.05],
+  [128.6, 34.88],
+  [128.4, 34.83],
+  [128.05, 34.9],
+  [127.85, 34.72],
+  [127.6, 34.72],
+  [127.4, 34.6],
+  [127.1, 34.55],
+  [126.9, 34.4],
+  [126.55, 34.3],
+  [126.3, 34.45],
+  [126.35, 34.75],
+  [126.3, 35.0],
+  [126.45, 35.25],
+  [126.4, 35.55],
+  [126.6, 35.85],
+  [126.55, 36.05],
+  [126.5, 36.35],
+  [126.2, 36.6],
+  [126.15, 36.85],
+  [126.4, 36.95],
+  [126.55, 37.0],
+  [126.8, 37.05],
+  [126.7, 37.25],
+  [126.6, 37.45],
+  [126.4, 37.55],
 ].map(([lon, lat]) => [px(lon), py(lat)]);
 const JEJU = { x: px(126.55), y: py(33.38), rx: 0.33 * 0.809 * K, ry: 0.15 * K };
 
@@ -100,7 +140,8 @@ function useRegionCounts() {
       if (error) throw error;
       const counts: Partial<Record<MapRegion, number>> = {};
       for (const post of data ?? []) {
-        for (const r of post.regions as string[]) if (r in CITIES) counts[r as MapRegion] = (counts[r as MapRegion] ?? 0) + 1;
+        for (const r of post.regions as string[])
+          if (r in CITIES) counts[r as MapRegion] = (counts[r as MapRegion] ?? 0) + 1;
       }
       return counts;
     },
@@ -116,7 +157,10 @@ export function EventMap({ compact = false }: { compact?: boolean }) {
   const { data: counts } = useRegionCounts();
   const liveRegions = Object.keys(counts ?? {}) as MapRegion[];
   const live = liveRegions.length > 0;
-  const regions = [...liveRegions, ...SAMPLE.filter((r) => !liveRegions.includes(r))].slice(0, Math.max(6, liveRegions.length));
+  const regions = [...liveRegions, ...SAMPLE.filter((r) => !liveRegions.includes(r))].slice(
+    0,
+    Math.max(6, liveRegions.length),
+  );
   const [tick, setTick] = useState(3);
 
   useEffect(() => {
@@ -135,77 +179,84 @@ export function EventMap({ compact = false }: { compact?: boolean }) {
     // Bow the arc upward, a little more for longer ones.
     const cx = (sponsor.x + x) / 2;
     const cy = Math.min(sponsor.y, y) - 40 - Math.abs(sponsor.x - x) * 0.12;
-    return { n, sponsor, region, x, y, d: `M${sponsor.x},${sponsor.y} Q${cx},${cy} ${x},${y}`, mid: { x: cx, y: (cy + (sponsor.y + y) / 2) / 2 - 24 } };
+    return {
+      n,
+      sponsor,
+      region,
+      x,
+      y,
+      d: `M${sponsor.x},${sponsor.y} Q${cx},${cy} ${x},${y}`,
+      mid: { x: cx, y: (cy + (sponsor.y + y) / 2) / 2 - 24 },
+    };
   };
   const current = connection(tick);
   const trail = [1, 2, 3].map((i) => connection(tick - i));
   const chip = `${REGION_LABELS[current.region]} · ${STATUSES[tick % STATUSES.length]}`;
   const chipWidth = chip.length * 7.2 + 28;
+  // The visible part of the drawing, and where a drawing point lands on the page, as a percentage of the box.
+  const box = compact ? { x: 320, y: 10, w: 360, h: 575 } : { x: 0, y: 0, w: W, h: H };
+  const at = (x: number, y: number) => ({
+    left: `${((x - box.x) / box.w) * 100}%`,
+    top: `${((y - box.y) / box.h) * 100}%`,
+  });
   // In the compact view, keep the chip inside the visible box (320–680).
   const chipX = compact ? Math.min(Math.max(current.mid.x, 326 + chipWidth / 2), 674 - chipWidth / 2) : current.mid.x;
 
   return (
-    <svg
-      data-map=""
-      viewBox={compact ? '320 10 360 575' : `0 0 ${W} ${H}`}
-      role="img"
-      aria-label={
-        live
-          ? `Map of South Korea with open events in ${liveRegions.map((r) => REGION_LABELS[r]).join(', ')}`
-          : 'Map of South Korea with sponsors sending proposals to events'
-      }
-      style={{ width: '100%', height: 'auto', display: 'block' }}>
-      <defs>
-        <linearGradient id="maple-arc" x1="0" x2="1" y1="0" y2="0">
-          <stop offset="0" stopColor="#f4b95a" />
-          <stop offset="1" stopColor="#e2482c" />
-        </linearGradient>
-      </defs>
+    // The names and the status chip are page text laid over the drawing (not SVG text), so they stay crisp at any
+    // size; each sits in a zero-size anchor at its map point and centers itself without a sub-pixel transform.
+    <div data-map-wrap="">
+      <svg
+        data-map=""
+        viewBox={`${box.x} ${box.y} ${box.w} ${box.h}`}
+        role="img"
+        aria-label={
+          live
+            ? `Map of South Korea with open events in ${liveRegions.map((r) => REGION_LABELS[r]).join(', ')}`
+            : 'Map of South Korea with sponsors sending proposals to events'
+        }
+        style={{ width: '100%', height: 'auto', display: 'block' }}>
+        <defs>
+          <linearGradient id="maple-arc" x1="0" x2="1" y1="0" y2="0">
+            <stop offset="0" stopColor="#f4b95a" />
+            <stop offset="1" stopColor="#e2482c" />
+          </linearGradient>
+        </defs>
 
-      <g className="land">
-        {LAND.map(([x, y]) => (
-          <circle key={`${x},${y}`} cx={x} cy={y} r={1.5} />
+        <g className="land">
+          {LAND.map(([x, y]) => (
+            <circle key={`${x},${y}`} cx={x} cy={y} r={1.5} />
+          ))}
+        </g>
+
+        <g className="trail">
+          {trail.map((c) => (
+            <path key={c.n} d={c.d} />
+          ))}
+        </g>
+        <path key={`arc${tick}`} className="arc" d={current.d} pathLength={1} />
+
+        {regions.map((r) => {
+          const [lon, lat] = CITIES[r];
+          const size = 5 + Math.min(counts?.[r] ?? 1, 8) * 1.2;
+          const active = r === current.region;
+          return (
+            <g key={r} transform={`translate(${px(lon)} ${py(lat)})`} className={active ? 'pin on' : 'pin'}>
+              <circle className="ring" r={size} />
+              <circle className="dot" r={size / 2 + 1} />
+            </g>
+          );
+        })}
+      </svg>
+      {!compact &&
+        SPONSORS.map((s) => (
+          <div key={s.name} className="map-anchor" style={at(s.x, s.y)} aria-hidden>
+            <span className={s === current.sponsor ? 'map-sponsor on' : 'map-sponsor'}>{s.name}</span>
+          </div>
         ))}
-      </g>
-
-      <g className="trail">
-        {trail.map((c) => (
-          <path key={c.n} d={c.d} />
-        ))}
-      </g>
-      <path key={`arc${tick}`} className="arc" d={current.d} pathLength={1} />
-
-      {regions.map((r) => {
-        const [lon, lat] = CITIES[r];
-        const size = 5 + Math.min(counts?.[r] ?? 1, 8) * 1.2;
-        const active = r === current.region;
-        return (
-          <g key={r} transform={`translate(${px(lon)} ${py(lat)})`} className={active ? 'pin on' : 'pin'}>
-            <circle className="ring" r={size} />
-            <circle className="dot" r={size / 2 + 1} />
-          </g>
-        );
-      })}
-
-      {SPONSORS.map((s) => {
-        const on = s === current.sponsor;
-        const w = s.name.length * 7.4 + 28;
-        return (
-          <g key={s.name} transform={`translate(${s.x} ${s.y})`} className={on ? 'sponsor on' : 'sponsor'}>
-            <rect x={-w / 2} y={-15} width={w} height={30} rx={15} />
-            <text textAnchor="middle" y={5}>
-              {s.name}
-            </text>
-          </g>
-        );
-      })}
-
-      <g key={`chip${tick}`} className="chip" transform={`translate(${chipX} ${current.mid.y})`}>
-        <rect x={-chipWidth / 2} y={-16} width={chipWidth} height={32} rx={16} />
-        <text textAnchor="middle" y={5}>
-          {chip}
-        </text>
-      </g>
-    </svg>
+      <div key={`chip${tick}`} className="map-anchor" style={at(chipX, current.mid.y)} aria-hidden>
+        <span className="map-chip">{chip}</span>
+      </div>
+    </div>
   );
 }

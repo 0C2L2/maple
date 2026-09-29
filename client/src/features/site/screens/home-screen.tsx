@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Image } from 'expo-image';
 import { Link, Redirect, router, type Href } from 'expo-router';
 import { SymbolView, type SymbolViewProps } from 'expo-symbols';
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Linking, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useReducedMotion } from 'react-native-reanimated';
 
@@ -185,13 +185,7 @@ function Hero() {
       <View style={[styles.sectionInner, styles.heroStack]}>
         <AnnouncementBar />
         <View {...motion({ enter: 0, photo: '' })} style={[styles.heroBox, wide && styles.heroBoxWide]}>
-          <Image
-            source={require('@/assets/images/site/hero.webp')}
-            accessibilityLabel="A speaker on stage in front of a packed, warmly lit event hall"
-            style={StyleSheet.absoluteFill}
-            contentFit="cover"
-            priority="high"
-          />
+          <HeroVideo />
           <View {...motion({ shade: '' })} style={StyleSheet.absoluteFill} />
           <View style={[styles.heroContent, wide && styles.heroContentWide]}>
             <ThemedText level={1} style={[styles.heroTitle, wide && styles.heroTitleWide, styles.onPhoto]}>
@@ -262,6 +256,54 @@ function Hero() {
         </View>
       </View>
     </View>
+  );
+}
+
+// Upwork-style: a muted, looping event video behind the hero (the landing is website-only). Its still frame shows
+// while it loads, and is all that visitors who ask for reduced motion see. A button pauses it (WCAG 2.2.2).
+// Video: an 11-second montage of three Pexels clips (Pexels License, free to use): a meetup host with attendees
+// (34013073), a hackathon team coding (6804109), and a winning team holding its prize cheque (6805171).
+function HeroVideo() {
+  const reduceMotion = useReducedMotion();
+  const video = useRef<HTMLVideoElement>(null);
+  const [paused, setPaused] = useState(false);
+  const toggle = () => {
+    const v = video.current;
+    if (!v) return;
+    if (v.paused) v.play();
+    else v.pause();
+    setPaused(v.paused);
+  };
+  return (
+    <>
+      <video
+        ref={video}
+        src="/videos/hero-events.mp4"
+        poster="/videos/hero-events.webp"
+        autoPlay={!reduceMotion}
+        muted
+        loop
+        playsInline
+        preload={reduceMotion ? 'none' : 'auto'}
+        aria-hidden
+        // Sharp and full color; the shade layer ([data-shade] in global.css) softens only the text side.
+        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', filter: 'saturate(1.1)' }}
+      />
+      {!reduceMotion && (
+        <Pressable
+          {...motion({ press: 'secondary' })}
+          role="button"
+          accessibilityLabel={paused ? 'Play background video' : 'Pause background video'}
+          onPress={toggle}
+          style={styles.videoToggle}>
+          <SymbolView
+            name={paused ? { ios: 'play.fill', android: 'play_arrow', web: 'play_arrow' } : { ios: 'pause.fill', android: 'pause', web: 'pause' }}
+            tintColor="#FFFFFF"
+            size={20}
+          />
+        </Pressable>
+      )}
+    </>
   );
 }
 
@@ -1065,6 +1107,18 @@ const styles = StyleSheet.create({
   heroBand: { paddingHorizontal: Spacing.three, paddingTop: Spacing.four, paddingBottom: Spacing.six },
   heroStack: { gap: Spacing.four },
   heroBox: { borderRadius: 24, overflow: 'hidden', minHeight: 560, justifyContent: 'center' },
+  videoToggle: {
+    position: 'absolute',
+    right: Spacing.three,
+    bottom: Spacing.three,
+    zIndex: 2,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(20, 10, 6, 0.5)',
+  },
   heroBoxWide: { minHeight: 620 },
   heroContent: { padding: Spacing.four, gap: Spacing.four, maxWidth: 760 },
   heroContentWide: { paddingHorizontal: Spacing.six, paddingVertical: Spacing.five },
@@ -1080,9 +1134,9 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     borderWidth: 1.5,
     borderColor: 'transparent',
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    backgroundColor: 'rgba(20, 10, 6, 0.45)',
   },
-  heroToggleOn: { borderColor: '#FFFFFF', backgroundColor: 'rgba(255, 255, 255, 0.16)' },
+  heroToggleOn: { borderColor: '#FFFFFF', backgroundColor: 'rgba(20, 10, 6, 0.6)' },
   heroSearch: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1159,7 +1213,7 @@ const styles = StyleSheet.create({
     gap: Spacing.half,
   },
   scrim: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, backgroundColor: 'rgba(24, 12, 8, 0.42)' },
-  onPhoto: { color: '#FFFFFF', textShadowColor: 'rgba(0, 0, 0, 0.45)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 8 },
+  onPhoto: { color: '#FFFFFF', textShadowColor: 'rgba(0, 0, 0, 0.6)', textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 14 },
   tiles: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.three },
   iconTile: { flexGrow: 1, flexBasis: '45%', minHeight: 150, borderRadius: 20, padding: Spacing.four, gap: Spacing.two },
   iconTileWide: { flexBasis: '22%', borderRadius: 0 },

@@ -152,14 +152,30 @@ textarea[dir='auto'] {
 :root[data-theme='dark'] [data-announce] {
   background-image: linear-gradient(90deg, #2a1b17 0%, #2a2219 55%, #221a16 100%);
 }
-/* Home hero photo: shaded only behind the white text on the left; the right half of the photo stays clear. */
+/*
+ * Home hero video: dark and softly blurred behind the white text on the left, fading smoothly to a clear, sharp
+ * video on the right. The mask fades the blur out across the middle so there's no visible edge.
+ */
 [data-shade] {
-  background-image: linear-gradient(90deg, rgba(20, 10, 6, 0.66) 0%, rgba(20, 10, 6, 0.4) 40%, rgba(20, 10, 6, 0) 75%);
+  background-image: linear-gradient(
+    90deg,
+    rgba(14, 8, 5, 0.88) 0%,
+    rgba(14, 8, 5, 0.8) 30%,
+    rgba(14, 8, 5, 0.5) 48%,
+    rgba(14, 8, 5, 0.15) 62%,
+    rgba(14, 8, 5, 0) 72%
+  );
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  -webkit-mask-image: linear-gradient(90deg, #000 0%, #000 34%, transparent 70%);
+  mask-image: linear-gradient(90deg, #000 0%, #000 34%, transparent 70%);
 }
 /* Phones: the text spans the whole photo, so shade it evenly, darkest behind the lower half. */
 @media (max-width: 700px) {
   [data-shade] {
-    background-image: linear-gradient(180deg, rgba(20, 10, 6, 0.55) 0%, rgba(20, 10, 6, 0.62) 45%, rgba(20, 10, 6, 0.82) 100%);
+    background-image: linear-gradient(180deg, rgba(14, 8, 5, 0.7) 0%, rgba(14, 8, 5, 0.74) 45%, rgba(14, 8, 5, 0.88) 100%);
+    -webkit-mask-image: none;
+    mask-image: none;
   }
 }
 /* Photo cards: shaded only along the bottom, under the label (replaces the flat tint set in the app styles). */
@@ -410,30 +426,6 @@ textarea[dir='auto'] {
   transform-box: fill-box;
   transform-origin: center;
 }
-[data-map] .sponsor rect {
-  fill: var(--page);
-  stroke: var(--rail);
-}
-[data-map] .sponsor text,
-[data-map] .chip text {
-  font: 600 13px var(--font-display);
-}
-[data-map] .sponsor text {
-  fill: var(--map-text);
-}
-[data-map] .sponsor.on rect {
-  stroke: var(--nav-hover);
-  stroke-width: 1.5;
-}
-[data-map] .sponsor.on text {
-  fill: var(--nav-hover);
-}
-[data-map] .chip rect {
-  fill: var(--nav-hover);
-}
-[data-map] .chip text {
-  fill: #fff;
-}
 @keyframes maple-draw {
   from {
     stroke-dashoffset: 1;
@@ -469,12 +461,6 @@ textarea[dir='auto'] {
   }
   [data-map] .pin.on .ring {
     animation-duration: 1.2s;
-  }
-  [data-map] .chip {
-    animation: maple-fade 300ms 600ms both;
-  }
-  [data-map] .sponsor rect {
-    transition: stroke 300ms;
   }
 }
 
@@ -617,5 +603,52 @@ body::after {
 @keyframes maple-sheen {
   to {
     transform: translateX(100%);
+  }
+}
+
+/* Map labels: page text over the drawing, so it stays sharp. Each anchor is a zero-size point that centers its label. */
+[data-map-wrap] {
+  position: relative;
+}
+.map-anchor {
+  position: absolute;
+  width: 0;
+  height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+.map-sponsor,
+.map-chip {
+  white-space: nowrap;
+  border-radius: 999px;
+  font: 600 13px/1 var(--font-display);
+  -webkit-font-smoothing: antialiased;
+}
+.map-sponsor {
+  padding: 8px 14px;
+  background: var(--page);
+  border: 1px solid var(--rail);
+  color: var(--map-text);
+}
+.map-sponsor.on {
+  border-color: var(--nav-hover);
+  color: var(--nav-hover);
+}
+.map-chip {
+  padding: 9px 16px;
+  background: var(--nav-hover);
+  color: #fff;
+  box-shadow: 0 8px 20px -10px rgba(120, 45, 20, 0.6);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .map-chip {
+    animation: maple-fade 300ms 600ms both;
+  }
+  .map-sponsor {
+    transition:
+      border-color 300ms,
+      color 300ms;
   }
 }
