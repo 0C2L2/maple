@@ -361,8 +361,8 @@ function AnnouncementBar() {
   );
 }
 
-// The logo strip: members and partners in the order staff set in /admin → Logos (strip_logos()). It appears once
-// there are enough logos to read as a strip.
+// The logo strip: members and partners in the order staff set in /admin → Logos (strip_logos()). It shows whenever
+// at least one logo is visible; with only a few, the runs below repeat them to fill the row.
 function Organizations() {
   const { data } = useQuery({
     queryKey: ['strip-logos'],
@@ -383,7 +383,7 @@ function Organizations() {
       return (data?.logo_url as string | null) ?? null;
     },
   });
-  if (!data || data.length < 4) return null;
+  if (!data?.length) return null;
   // One invite tile per run: new visitors sign up; signed-in organizations without a logo add one in Settings.
   const invite = me
     ? myLogo === null
