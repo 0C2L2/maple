@@ -5,6 +5,9 @@ import { Linking, StyleSheet, View } from 'react-native';
 
 import { contactTopicLabel } from '@/constants/site';
 import { Spacing } from '@/constants/theme';
+import { useSession } from '@/features/auth/session';
+import { OrgLogo } from '@/features/organizations/components/org-logo';
+import { pickAndUploadImage } from '@/features/organizations/upload-image';
 import { reasonLabel } from '@/features/safety/report-reasons';
 import { useIsStaff } from '@/features/safety/use-is-staff';
 import { formatDate, formatMoney, timeAgo } from '@/lib/format';
@@ -20,13 +23,14 @@ import { TabStrip } from '@/ui/tab-strip';
 import { TextField } from '@/ui/text-field';
 import { ThemedText } from '@/ui/themed-text';
 
-type Tab = 'reports' | 'inbox' | 'orgs' | 'posts' | 'finance' | 'broadcast' | 'log';
+type Tab = 'reports' | 'inbox' | 'orgs' | 'posts' | 'finance' | 'logos' | 'broadcast' | 'log';
 const TABS = [
   { value: 'reports' as const, label: 'Reports' },
   { value: 'inbox' as const, label: 'Inbox' },
   { value: 'orgs' as const, label: 'Organizations' },
   { value: 'posts' as const, label: 'Posts' },
   { value: 'finance' as const, label: 'Finance' },
+  { value: 'logos' as const, label: 'Logos' },
   { value: 'broadcast' as const, label: 'Broadcast' },
   { value: 'log' as const, label: 'Log' },
 ];
@@ -43,6 +47,10 @@ const ACTION_LABELS: Record<string, string> = {
   broadcast: 'Messaged',
   set_pilot: 'Made a pilot event (0% fee)',
   unset_pilot: 'Ended pilot (normal fee)',
+  add_logo: 'Added a logo to the home strip',
+  hide_logo: 'Hid a logo from the home strip',
+  show_logo: 'Showed a logo in the home strip',
+  delete_logo: 'Deleted a logo from the home strip',
 };
 
 const AUDIENCES = [
@@ -82,6 +90,7 @@ export default function AdminScreen() {
       {tab === 'posts' && <PostsTab />}
       {tab === 'broadcast' && <BroadcastTab />}
       {tab === 'finance' && <FinanceTab />}
+      {tab === 'logos' && <LogosTab />}
       {tab === 'log' && <LogTab />}
     </Screen>
   );
@@ -644,6 +653,127 @@ function FinanceTab() {
   );
 }
 
+type StripLogo = {
+  id: string;
+  org_handle: string | null;
+  name: string;
+  logo_url: string | null;
+  link: string | null;
+  hidden: boolean;
+  member: boolean;
+};
+
+// The home page's logo strip, in order. Members with a logo join at the end on their own; staff add partners,
+// reorder, and hide. Members can only be hidden (they'd come back), partners can also be deleted.
+function LogosTab() {
+  const queryClient = useQueryClient();
+  const { session } = useSession();
+  const { run, confirming, error } = useAdminAction();
+  const [name, setName] = useState('');
+  const [link, setLink] = useState('');
+  const [logo, setLogo] = useState<string | null>(null);
+  const [formError, setFormError] = useState<string>();
+  const [busy, setBusy] = useState(false);
+  const { data, isPending } = useQuery({
+    queryKey: ['admin', 'logos'],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('admin_strip_logos');
+      if (error) throw error;
+      return data as StripLogo[];
+    },
+  });
+
+  const upload = async () => {
+    try {
+      const url = await pickAndUploadImage(session!.user.id, 'logo');
+      if (url) setLogo(url);
+    } catch (e) {
+      setFormError(e instanceof Error ? e.message : errorMessage(e));
+    }
+  };
+
+  const add = async () => {
+    if (!name.trim()) return setFormError('Enter the organization’s name.');
+    if (!logo) return setFormError('Upload its logo.');
+    setBusy(true);
+    const { error } = await supabase.rpc('admin_add_logo', { name, logo_url: logo, link: link.trim() || null });
+    setBusy(false);
+    if (error) return setFormError(errorMessage(error));
+    setFormError(undefined);
+    setName('');
+    setLink('');
+    setLogo(null);
+    queryClient.invalidateQueries({ queryKey: ['admin'] });
+    queryClient.invalidateQueries({ queryKey: ['strip-logos'] });
+  };
+
+  return (
+    <>
+      <ThemedText themeColor="textSecondary">
+        The logos in the home page’s “Organizations on Maple” strip, in this order. Members with a logo join at the
+        end on their own. Add a company that isn’t on Maple only with its permission.
+      </ThemedText>
+      <Card>
+        <ThemedText type="subheading">Add a company or organization</ThemedText>
+        <TextField label="Name" value={name} onChangeText={setName} maxLength={120} />
+        <TextField
+          label="Link (optional)"
+          placeholder="Its website, or /org/handle for a Maple page"
+          value={link}
+          onChangeText={setLink}
+          autoCapitalize="none"
+          maxLength={300}
+        />
+        <View style={styles.actions}>
+          {logo && <OrgLogo name={name || 'New logo'} url={logo} size={56} />}
+          <Button title={logo ? 'Change logo' : 'Upload logo'} variant="secondary" onPress={upload} />
+        </View>
+        <ErrorLine error={formError} />
+        <Button title={busy ? 'Adding…' : 'Add to the strip'} onPress={add} disabled={busy} />
+      </Card>
+      <ErrorLine error={error} />
+      {isPending ? (
+        <Loading />
+      ) : !data?.length ? (
+        <Notice title="No logos yet" />
+      ) : (
+        data.map((item, i) => (
+          <Card key={item.id}>
+            <View style={styles.logoRow}>
+              <OrgLogo name={item.name} url={item.logo_url} size={44} />
+              <View style={styles.logoText}>
+                <ThemedText type="bodyStrong">
+                  {i + 1}. {item.name}
+                </ThemedText>
+                <ThemedText type="small" themeColor="textSecondary">
+                  {item.member ? `Maple member · @${item.org_handle}` : `Added partner${item.link ? ` · ${item.link}` : ''}`}
+                  {item.hidden ? ' · HIDDEN' : ''}
+                </ThemedText>
+              </View>
+            </View>
+            <View style={styles.actions}>
+              <Button title="↑" variant="secondary" onPress={() => run(`u${item.id}`, 'admin_move_logo', { logo: item.id, step: -1 })} />
+              <Button title="↓" variant="secondary" onPress={() => run(`d${item.id}`, 'admin_move_logo', { logo: item.id, step: 1 })} />
+              <Button
+                title={item.hidden ? 'Show' : 'Hide'}
+                variant="secondary"
+                onPress={() => run(`h${item.id}`, 'admin_set_logo_hidden', { logo: item.id, hide: !item.hidden })}
+              />
+              {!item.member && (
+                <Button
+                  title={confirming === `x${item.id}` ? 'Press again to delete' : 'Delete'}
+                  variant="secondary"
+                  onPress={() => run(`x${item.id}`, 'admin_delete_logo', { logo: item.id }, true)}
+                />
+              )}
+            </View>
+          </Card>
+        ))
+      )}
+    </>
+  );
+}
+
 function Stat({ label, value }: { label: string; value: string }) {
   return (
     <View style={styles.stat}>
@@ -656,6 +786,8 @@ function Stat({ label, value }: { label: string; value: string }) {
 const styles = StyleSheet.create({
   tabs: { padding: 0, gap: 0, overflow: 'hidden' },
   stat: { flexDirection: 'row', justifyContent: 'space-between', gap: Spacing.three },
+  logoRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
+  logoText: { flex: 1, gap: Spacing.half },
   actions: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two },
   logRow: { gap: Spacing.half, paddingVertical: Spacing.one },
 });

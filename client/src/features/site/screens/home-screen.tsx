@@ -2,8 +2,8 @@ import { useQuery } from '@tanstack/react-query';
 import { Image } from 'expo-image';
 import { Link, Redirect, router, type Href } from 'expo-router';
 import { SymbolView, type SymbolViewProps } from 'expo-symbols';
-import { useState, type ReactNode } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useEffect, useState, type ReactNode } from 'react';
+import { Linking, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useReducedMotion } from 'react-native-reanimated';
 
 import { CATEGORY_LABELS, type Category } from '@/constants/taxonomy';
@@ -147,6 +147,9 @@ function Landing() {
           <HowItWorks />
         </Section>
         <Section>
+          <BothSides />
+        </Section>
+        <Section>
           <Faq />
         </Section>
         <Section>
@@ -221,35 +224,207 @@ function Hero() {
   );
 }
 
-// Real organization logos only. The wall appears once there are enough of them to read as a wall.
+// The logo strip: members and partners in the order staff set in /admin → Logos (strip_logos()). It appears once
+// there are enough logos to read as a strip.
 function Organizations() {
   const { data } = useQuery({
-    queryKey: ['organizations', 'logos'],
+    queryKey: ['strip-logos'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('organizations')
-        .select('handle, name, logo_url')
-        .not('logo_url', 'is', null)
-        .order('created_at')
-        .limit(12);
+      const { data, error } = await supabase.rpc('strip_logos');
       if (error) throw error;
-      return data as { handle: string; name: string; logo_url: string }[];
+      return data as { key: string; name: string; logo_url: string; href: string | null }[];
+    },
+  });
+  const { session } = useSession();
+  const me = session?.user.id;
+  const { data: myLogo } = useQuery({
+    queryKey: ['organizations', 'my-logo', me],
+    enabled: !!me,
+    queryFn: async () => {
+      const { data, error } = await supabase.from('organizations').select('logo_url').eq('id', me!).maybeSingle();
+      if (error) throw error;
+      return (data?.logo_url as string | null) ?? null;
     },
   });
   if (!data || data.length < 4) return null;
+  // One invite tile per run: new visitors sign up; signed-in organizations without a logo add one in Settings.
+  const invite = me
+    ? myLogo === null
+      ? { href: '/settings' as const, label: 'Add your logo', a11y: 'Add your logo to Maple' }
+      : null
+    : { href: '/signup' as const, label: 'Your logo here', a11y: 'Add your organization to Maple' };
+  const open = (href: string) => (/^https?:/.test(href) ? Linking.openURL(href) : router.push(href as Href));
   return (
     <Section>
       <ThemedText type="smallStrong" themeColor="textSecondary" style={styles.center}>
         Organizations on Maple
       </ThemedText>
-      <View style={styles.logos}>
-        {data.map((org) => (
-          <Link key={org.handle} href={`/org/${org.handle}`} aria-label={org.name}>
-            <OrgLogo name={org.name} url={org.logo_url} size={52} />
-          </Link>
-        ))}
+      {/* A scrolling strip like Cloudflare's (global.css [data-marquee]): each run is the organizations then the
+          invite tile; runs repeat to fill the width, and the whole strip repeats once so the loop is seamless.
+          Every item is the same Pressable box (a bare Link renders inline text, which sat lower). Only the first
+          run is reachable by keyboard and screen readers; the repeats are hidden from them. */}
+      <View {...motion({ marquee: '' })}>
+        <View {...motion({ track: '' })} style={styles.logos}>
+          {Array.from({ length: 2 * Math.ceil(12 / (data.length + 1)) }, (_, run) =>
+            [
+              ...data.map((logo) => ({ key: logo.key, href: logo.href, label: logo.name, logo })),
+              ...(invite ? [{ key: 'invite', href: invite.href as string, label: invite.a11y, logo: null }] : []),
+            ].map((item) => {
+              const key = `${run}-${item.key}`;
+              const content = item.logo ? (
+                <OrgLogo name={item.logo.name} url={item.logo.logo_url} size={56} />
+              ) : (
+                <LogoInvite label={invite!.label} />
+              );
+              // A partner without a link is only a picture.
+              if (!item.href)
+                return (
+                  <View key={key} aria-hidden={run > 0} style={styles.logo}>
+                    {content}
+                  </View>
+                );
+              return (
+                <Pressable
+                  key={key}
+                  role={run === 0 ? 'link' : undefined}
+                  aria-label={run === 0 ? item.label : undefined}
+                  aria-hidden={run > 0}
+                  focusable={run === 0}
+                  onPress={() => open(item.href!)}
+                  style={styles.logo}>
+                  {content}
+                </Pressable>
+              );
+            }),
+          )}
+        </View>
       </View>
     </Section>
+  );
+}
+
+// Made-up example proposals for the "both sides" section (not real organizations or deals).
+const EXAMPLES = [
+  { name: 'Nuri Labs', pkg: 'Gold package', value: '₩4,000,000' },
+  { name: 'Hanbit Coffee', pkg: 'Food and venue', value: 'In-kind' },
+  { name: 'Blue Wave Studio', pkg: 'Silver package', value: '₩2,000,000' },
+  { name: 'Daon Cloud', pkg: 'Cloud credits', value: 'In-kind' },
+  { name: 'Pixel Bank', pkg: 'Prize track', value: '₩1,500,000' },
+  { name: 'Maru Games', pkg: 'Community package', value: '₩700,000' },
+];
+const AGES = ['just now', '1 hour ago', 'yesterday', '2 days ago'];
+const FADE = [1, 0.8, 0.5, 0.25];
+
+// Cloudflare-style bento: a live-looking list of proposals (a new one arrives every few seconds and moves
+// New → In talks → Won as it ages) beside a maple-red card about the one marketplace. Still for reduced motion.
+function BothSides() {
+  const theme = useTheme();
+  const wide = useIsWide(900);
+  const reduceMotion = useReducedMotion();
+  const [tick, setTick] = useState(0);
+  useEffect(() => {
+    if (reduceMotion) return;
+    const timer = setInterval(() => setTick((t) => t + 1), 3000);
+    return () => clearInterval(timer);
+  }, [reduceMotion]);
+
+  const rows = AGES.map((age, i) => {
+    const n = tick - i;
+    return { n, age, ...EXAMPLES[((n % EXAMPLES.length) + EXAMPLES.length) % EXAMPLES.length] };
+  });
+
+  return (
+    <>
+      <View style={styles.bothHead}>
+        <ThemedText type="title" level={2} style={styles.center}>
+          Built for both sides of the deal
+        </ThemedText>
+        <ThemedText themeColor="textSecondary" style={styles.center}>
+          Easy for an organizer’s first hackathon and for a company sponsoring ten events a year.
+        </ThemedText>
+      </View>
+      <View style={[styles.bento, wide && styles.row]}>
+        <View style={[styles.bothCard, wide && { flex: 2 }, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}>
+          <ThemedText type="caption" themeColor="textSecondary">
+            EXAMPLE PROPOSALS
+          </ThemedText>
+          <View style={styles.bothList}>
+            {rows.map((r, i) => (
+              <View
+                key={r.n}
+                {...motion(i === 0 && !reduceMotion ? { open: '' } : {})}
+                style={[styles.bothRow, { backgroundColor: theme.brandSoft, opacity: FADE[i] }]}>
+                <ThemedText type="smallStrong" numberOfLines={1} style={[styles.fill, { color: theme.link }]}>
+                  {r.name} · {r.pkg}
+                </ThemedText>
+                {wide && (
+                  <ThemedText type="small" numberOfLines={1} style={[styles.fill, { color: theme.link }]}>
+                    {r.value} · {r.age}
+                  </ThemedText>
+                )}
+                <DealStatus step={i} />
+              </View>
+            ))}
+          </View>
+          <ThemedText type="subheading" level={3}>
+            Every proposal in one place
+          </ThemedText>
+          <ThemedText themeColor="textSecondary">
+            Shortlist, talk, and mark deals Won, without spreadsheets or cold email.
+          </ThemedText>
+        </View>
+        <Link href="/how-it-works" asChild>
+          <Pressable
+            {...motion({ lift: '' })}
+            style={StyleSheet.flatten([styles.bothCard, wide && { flex: 1 }, { backgroundColor: theme.brand, borderColor: theme.brand }])}>
+            <SymbolView name={{ ios: 'arrow.triangle.2.circlepath', android: 'handshake', web: 'handshake' }} tintColor={theme.onBrand} size={32} />
+            <ThemedText type="subheading" level={3} style={{ color: theme.onBrand }}>
+              One marketplace for organizers and sponsors
+            </ThemedText>
+            <ThemedText style={{ color: theme.onBrand }}>
+              Post your event or what you back, get proposals, talk, and close the deal. One page, one inbox, one history
+              of reviews.
+            </ThemedText>
+            <ThemedText type="bodyStrong" style={{ color: theme.onBrand }}>
+              How it works →
+            </ThemedText>
+          </Pressable>
+        </Link>
+      </View>
+    </>
+  );
+}
+
+// A proposal's status by age in the example list: New (a dot), In talks (spinning), then Won (a check).
+function DealStatus({ step }: { step: number }) {
+  const theme = useTheme();
+  const label = step === 0 ? 'New' : step === 1 ? 'In talks' : 'Won';
+  return (
+    <View style={styles.status}>
+      <ThemedText type="smallStrong" style={{ color: theme.link }}>
+        {label}
+      </ThemedText>
+      {step === 0 && <View style={[styles.dotSmall, { backgroundColor: theme.link }]} />}
+      {step === 1 && <View {...motion({ spin: '' })} style={[styles.spinner, { borderColor: theme.link }]} />}
+      {step >= 2 && <SymbolView name={{ ios: 'checkmark.circle.fill', android: 'check_circle', web: 'check_circle' }} tintColor={theme.link} size={20} />}
+    </View>
+  );
+}
+
+// A dashed "+" tile the size of a logo, with its label beside it; it turns maple red on hover (global.css [data-nav]).
+function LogoInvite({ label }: { label: string }) {
+  const theme = useTheme();
+  return (
+    <View {...motion({ nav: '' })} style={styles.invite}>
+      <View style={[styles.inviteBox, { borderColor: theme.textSecondary }]}>
+        <ThemedText type="subheading" themeColor="textSecondary">
+          +
+        </ThemedText>
+      </View>
+      <ThemedText type="smallStrong" themeColor="textSecondary">
+        {label}
+      </ThemedText>
+    </View>
   );
 }
 
@@ -561,9 +736,14 @@ function StickyBar() {
     <View {...motion({ bar: '' })} style={[styles.sticky, { backgroundColor: theme.background, borderTopColor: theme.border }]}>
       <View style={styles.stickyInner}>
         {wide && <ThemedText type="bodyStrong">Post your event once. Sponsors send you proposals.</ThemedText>}
-        <View style={styles.buttons}>
-          <Button title="Post your event free" onPress={() => router.push('/posts/new')} />
-          <Button title="Find sponsors" variant="secondary" onPress={() => router.push('/sponsors')} />
+        {/* Phones: two equal halves, with a shorter first label so both fit. */}
+        <View style={[styles.buttons, !wide && styles.stickyNarrow]}>
+          <View style={!wide && styles.fill}>
+            <Button title={wide ? 'Post your event free' : 'Post free'} onPress={() => router.push('/posts/new')} />
+          </View>
+          <View style={!wide && styles.fill}>
+            <Button title="Find sponsors" variant="secondary" onPress={() => router.push('/sponsors')} />
+          </View>
         </View>
       </View>
     </View>
@@ -630,7 +810,33 @@ const styles = StyleSheet.create({
   },
   heroCardWide: { position: 'absolute', left: -56, bottom: -40, width: 380, marginTop: 0, marginHorizontal: 0 },
 
-  logos: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: Spacing.five },
+  logos: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start' },
+  // Spacing is padding, not gap, so both halves of the strip are exactly the same width.
+  logo: { paddingHorizontal: Spacing.five },
+  bothHead: { gap: Spacing.two, alignItems: 'center' },
+  bothCard: { borderWidth: 1, borderRadius: 20, padding: Spacing.four, gap: Spacing.three },
+  bothList: { gap: Spacing.two, marginBottom: Spacing.two },
+  bothRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.three,
+    minHeight: 52,
+    paddingHorizontal: Spacing.three,
+    borderRadius: 10,
+  },
+  status: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
+  dotSmall: { width: 8, height: 8, borderRadius: 4 },
+  spinner: { width: 16, height: 16, borderRadius: 8, borderWidth: 2, borderTopColor: 'transparent' },
+  invite: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
+  inviteBox: {
+    width: 56,
+    height: 56,
+    borderRadius: 9,
+    borderWidth: 1.5,
+    borderStyle: 'dashed',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 
   bento: { gap: Spacing.three },
   photoTile: {
@@ -714,6 +920,7 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.three,
     boxShadow: '0 -12px 32px -20px rgba(60, 24, 12, 0.35)',
   },
+  stickyNarrow: { flex: 1, flexWrap: 'nowrap', gap: Spacing.two },
   stickyInner: {
     width: '100%',
     maxWidth: MaxContentWidth,

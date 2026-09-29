@@ -88,13 +88,13 @@ The proposed spoken copy below paraphrases the participant's recollection of the
 
 ## 7. Revenue hypothesis — 3:05–3:25
 
-**On screen:** Today: free early access. Next: test paid organizer tools and optional visibility.
+**On screen:** Today: free early access. Planned, once payments launch: a commission on deals paid through Maple, and paid extra proposals for organizers. Sponsors never pay.
 
-> Maple is free during early access. Once users receive value, we plan to test paid organizer tools and optional visibility.
+> Maple is free during early access. When payments launch, we plan to take a commission on cash sponsorships paid through Maple: 5% at launch, then 8%, from the organizer's payout. Sponsors never pay.
 >
-> We haven't validated prices yet. Sponsorship payments are currently arranged directly between the organizations.
+> Extra proposals beyond three per event would cost ₩5,000, mainly to keep sponsors' inboxes focused. These are first prices to test.
 
-**Delivery:** No invented revenue or commission. Be ready to explain why an organizer running two events annually might prefer a different billing model from a monthly subscription.
+**Delivery:** Say "plan" and "first prices to test": there's no revenue yet, and no money moves through Maple today. The commission applies only to cash deals paid through Maple; in-kind deals are free, and pilot events such as the next HABSIDA hackathon pay 0%.
 
 ## 8. Return to the next event — 3:25–3:50
 
@@ -120,7 +120,8 @@ Give a direct initial answer in roughly 15–30 seconds, then pause for follow-u
 | Why would a sponsor join? | “To find relevant events with clear audiences, needs, and benefits. We need to learn each sponsor's criteria and prove the opportunities are useful. More listings alone do not provide that value.” |
 | Why wouldn't people use personal contacts or existing marketplaces? | “They may, and those are real alternatives. We need to show that current sponsor needs, structured event information, and a focused local community produce better matches or less work.” |
 | How do you get the first sponsors? | “Direct outreach to a small group with current interest, then carefully selected event opportunities and assisted introductions. We will measure real replies, not just account signups.” |
-| Why pay a monthly fee for two events a year? | “That is a real pricing question. Monthly pricing is unvalidated. We need to test when organizers receive value and whether per-event or periodic payment makes more sense.” |
+| Why pay a commission instead of arranging payment directly? | “We plan to hold the sponsor's payment and release it after the results report, so organizers know they'll be paid and sponsors pay for an event that happened. Whether that's worth 5 to 8% is exactly what we need to test.” |
+| Isn't a proposal fee a barrier for student organizers? | “Each event gets three free proposals, and a proposal comes back if the sponsor doesn't reply within 14 days. The fee is mainly there so sponsors get fewer, better pitches.” |
 | What stops users leaving after an introduction? | “Reusable event details and proposal history may help with the next event, but repeat use is unproven. We need to measure it rather than assume the first introduction creates retention.” |
 | How would a HABSIDA pilot work? | “If the organizers are interested, we would first understand the next event's actual needs, recruit sponsors with relevant criteria, and measure substantive two-way conversations and any resulting agreements. The scope would be agreed together.” |
 

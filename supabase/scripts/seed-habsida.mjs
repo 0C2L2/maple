@@ -132,6 +132,9 @@ const media = (file, type) => upload('org-media', `${id}/${file}`, readFileSync(
 const logo = await media('logo.png', 'image/png');
 const banner = await media('banner.jpg', 'image/jpeg');
 const cover = await media('cover.jpg', 'image/jpeg');
+// Photos from the September hackathon: the group, 1st, 2nd, both 3rd places, and the judges.
+const photos = [];
+for (let n = 1; n <= 6; n++) photos.push(await media(`hackathon-${n}.webp`, 'image/webp'));
 
 await upsert('organizations', [
   {
@@ -429,7 +432,7 @@ await upsert('showcases', [
     ],
     sponsors: ['UpperClass'],
     cover_url: cover,
-    gallery: [cover, banner],
+    gallery: [cover, banner, ...photos],
     link: 'https://luma.com/cwaixvls',
   },
 ]);

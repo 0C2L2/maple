@@ -92,6 +92,26 @@ textarea[dir='auto'] {
   background-size: 300% 300%;
 }
 
+/* Organizations strip on the home page: a row that fades out at both edges; its track scrolls in the motion rules. */
+[data-marquee] {
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 12%, #000 88%, transparent);
+  mask-image: linear-gradient(to right, transparent, #000 12%, #000 88%, transparent);
+}
+[data-track] {
+  width: max-content;
+}
+@keyframes maple-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes maple-marquee {
+  to {
+    transform: translateX(-50%);
+  }
+}
+
 /* A soft maple-red light in the corner of the home hero. */
 [data-glow] {
   background-image: radial-gradient(58% 64% at 92% 0%, rgba(200, 51, 27, 0.11), transparent 72%);
@@ -207,6 +227,17 @@ textarea[dir='auto'] {
   }
   [data-drift='paused'] {
     animation-play-state: paused;
+  }
+  /* The strip moves left without end (its two halves are identical) and pauses under the pointer. */
+  [data-track] {
+    animation: maple-marquee 40s linear infinite;
+  }
+  [data-marquee]:hover [data-track] {
+    animation-play-state: paused;
+  }
+  /* "In talks" spinner in the home page's example proposals. */
+  [data-spin] {
+    animation: maple-spin 900ms linear infinite;
   }
   [data-turn] {
     transition: transform 220ms var(--ease-out);
